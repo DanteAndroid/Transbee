@@ -6,6 +6,11 @@
   <a href="#english">English</a> | <a href="#chinese">中文</a>
 </p>
 
+<p align="center">
+  <a href="#english"><img src="screenshot.png" alt="Screenshot" width="618" height="512"></a>
+</p>
+
+
 ---
 
 <a name="english"></a>
