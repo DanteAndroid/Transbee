@@ -61,3 +61,4 @@ native/bundled/whisper-cli
 native/bundled/whisper-win
 native/bundled/.whisper-src
 native/bundled/.whisper-build
+/native/bundled/ffmpeg.exe
