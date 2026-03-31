@@ -1,0 +1,20 @@
+---
+description: 修复 bug 后必须运行桌面应用验证
+alwaysApply: true
+---
+
+# 修复后运行
+
+在本仓库（Compose Desktop / whisperit）中，**每次完成 bug 修复或相关代码改动后**，必须在项目根目录执行并确认无构建错误：
+
+```bash
+./gradlew :composeApp:compileKotlinJvm
+```
+
+若改动影响可运行行为，还应启动应用供用户验证：
+
+```bash
+./gradlew :composeApp:run
+```
+
+`run` 为长期运行的 GUI 进程，在终端中后台启动即可；若环境无图形界面导致失败，说明原因即可。
