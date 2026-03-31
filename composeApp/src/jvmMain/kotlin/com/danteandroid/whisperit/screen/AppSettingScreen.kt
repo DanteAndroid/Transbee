@@ -294,7 +294,7 @@ fun TranslationSettingCard(
                     )
                 }
                 DropdownMenu(expanded = engineExpanded, onDismissRequest = { engineExpanded = false }) {
-                    TranslationEngine.entries.forEach { eng ->
+                    TranslationEngine.entries.filter { it != TranslationEngine.APPLE || com.danteandroid.whisperit.utils.OsUtils.isMacOs() }.forEach { eng ->
                         DropdownMenuItem(
                             text = { Text(stringResource(eng.labelRes)) },
                             onClick = {

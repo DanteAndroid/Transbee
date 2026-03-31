@@ -85,7 +85,7 @@ val generateBundledNativeDistributionPath =
     tasks.register<GenerateBundledNativeDistributionPathTask>("generateBundledNativeDistributionPath") {
         group = "build"
         nativeDistributionPath.set(
-            layout.projectDirectory.dir("native-distribution").asFile.canonicalFile.absolutePath,
+            layout.projectDirectory.dir("native-distribution/common").asFile.canonicalFile.absolutePath,
         )
         outputFile.set(
             layout.buildDirectory.file(
@@ -112,11 +112,11 @@ val buildAppleTranslateMac = tasks.register<Exec>("buildAppleTranslateMac") {
 
 val syncAppleTranslateBundle = tasks.register("syncAppleTranslateBundle") {
     group = "build"
-    description = "将 AppleTranslate 复制到 composeApp/native-distribution（仅 macOS）"
+    description = "将 AppleTranslate 复制到 composeApp/native-distribution/common（仅 macOS）"
     dependsOn(buildAppleTranslateMac)
     notCompatibleWithConfigurationCache("复制 AppleTranslate 可执行文件")
     val rootDir = rootProject.layout.projectDirectory.asFile
-    val outDir = layout.projectDirectory.dir("native-distribution").asFile
+    val outDir = layout.projectDirectory.dir("native-distribution/common").asFile
     onlyIf { isMacOs() }
     doLast {
         val candidates = listOf(
@@ -162,6 +162,38 @@ private fun ensureBundledFfmpegMac(repoRoot: String) {
     println("已下载 FFmpeg → ${dest.absolutePath}")
 }
 
+private fun ensureBundledFfmpegWin(repoRoot: String) {
+    val exe = File(repoRoot, "native/bundled/ffmpeg.exe")
+    if (exe.isFile) return
+    if (!isWindowsOs()) return
+    val zipFile = File(layout.buildDirectory.dir("tmp/bundled").get().asFile, "ffmpeg-win.zip")
+    zipFile.parentFile.mkdirs()
+    exe.parentFile.mkdirs()
+    URI.create("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip").toURL().openStream().use { inp ->
+        Files.copy(inp, zipFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    }
+    ZipFile(zipFile).use { zip ->
+        var found = false
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val e = entries.nextElement()
+            if (e.name.endsWith("bin/ffmpeg.exe")) {
+                zip.getInputStream(e).use { stream ->
+                    Files.copy(stream, exe.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            throw GradleException("FFmpeg Windows 压缩包内缺少 bin/ffmpeg.exe 文件")
+        }
+    }
+    zipFile.delete()
+    exe.setExecutable(true, false)
+    println("已下载 Windows FFmpeg → ${exe.absolutePath}")
+}
+
 private fun ensureBundledWhisperWin(repoRoot: String) {
     val exe = File(repoRoot, "native/bundled/whisper-win/whisper-cli.exe")
     if (exe.isFile) return
@@ -198,14 +230,23 @@ val syncBundledFfmpeg = tasks.register("syncBundledFfmpeg") {
     group = "build"
     notCompatibleWithConfigurationCache("ensures FFmpeg then copies into native-distribution")
     doLast {
-        ensureBundledFfmpegMac(repoRootPath)
-        val src = File(repoRootPath, "native/bundled/ffmpeg")
-        if (!src.isFile) return@doLast
-        val outDir = File(composeNativeDistPath)
+        val outDir = File(composeNativeDistPath, "common")
         outDir.mkdirs()
-        val out = File(outDir, "ffmpeg")
-        src.copyTo(out, overwrite = true)
-        out.setExecutable(true, false)
+        if (isWindowsOs()) {
+            ensureBundledFfmpegWin(repoRootPath)
+            val src = File(repoRootPath, "native/bundled/ffmpeg.exe")
+            if (!src.isFile) return@doLast
+            val out = File(outDir, "ffmpeg.exe")
+            src.copyTo(out, overwrite = true)
+            out.setExecutable(true, false)
+        } else {
+            ensureBundledFfmpegMac(repoRootPath)
+            val src = File(repoRootPath, "native/bundled/ffmpeg")
+            if (!src.isFile) return@doLast
+            val out = File(outDir, "ffmpeg")
+            src.copyTo(out, overwrite = true)
+            out.setExecutable(true, false)
+        }
     }
 }
 
@@ -274,7 +315,7 @@ val syncBundledWhisperCli = tasks.register("syncBundledWhisperCli") {
     notCompatibleWithConfigurationCache("ensures whisper binaries then copies into native-distribution")
     doLast {
         ensureBundledWhisperWin(repoRootPath)
-        val outRoot = File(composeNativeDistPath)
+        val outRoot = File(composeNativeDistPath, "common")
         outRoot.mkdirs()
         when {
             isWindowsOs() -> {
@@ -299,8 +340,10 @@ val syncBundledWhisperCli = tasks.register("syncBundledWhisperCli") {
 compose.desktop {
     application {
         mainClass = "com.danteandroid.whisperit.MainKt"
+        jvmArgs("-Djava.net.useSystemProxies=true")
 
         nativeDistributions {
+            modules("java.net.http")
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Whisperit"
             packageVersion = "1.0.0"
@@ -309,6 +352,7 @@ compose.desktop {
                 bundleID = "com.danteandroid.whisperit"
                 dockName = "Whisperit" // 专门用于 Dock 栏显示的名字
                 iconFile.set(project.file("icons/whisperit.icns"))
+                entitlementsFile.set(project.file("entitlements.plist"))
                 infoPlist {
                     extraKeysRawXml = """
             <key>CFBundleLocalizations</key>
@@ -340,7 +384,7 @@ afterEvaluate {
             syncBundledWhisperCli,
         )
     }
-    val nativeDistPath = layout.projectDirectory.dir("native-distribution").asFile.absolutePath
+    val nativeDistPath = layout.projectDirectory.dir("native-distribution/common").asFile.absolutePath
     val dockIconPath =
         layout.projectDirectory.file("src/jvmMain/composeResources/drawable/whisperit_app_icon.png").asFile.absolutePath
     fun JavaExec.configureComposeRunResources() {

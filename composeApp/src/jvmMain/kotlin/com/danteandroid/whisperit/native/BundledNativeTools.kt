@@ -15,18 +15,18 @@ object BundledNativeTools {
         val pinned = File(BundledNativeDistributionPath.ABSOLUTE_PATH)
         if (pinned.isDirectory) return pinned
         val cwd = File(System.getProperty("user.dir") ?: ".")
-        val fromCwd = File(cwd, "native-distribution")
-        if (fromCwd.isDirectory) return fromCwd
-        val fromRepoRoot = File(cwd, "composeApp/native-distribution")
-        if (fromRepoRoot.isDirectory) return fromRepoRoot
+        File(cwd, "native-distribution/common").takeIf { it.isDirectory }?.let { return it }
+        File(cwd, "native-distribution").takeIf { it.isDirectory }?.let { return it }
+        File(cwd, "composeApp/native-distribution/common").takeIf { it.isDirectory }?.let { return it }
+        File(cwd, "composeApp/native-distribution").takeIf { it.isDirectory }?.let { return it }
         var walk: File? = cwd
         repeat(14) {
             val dir = walk ?: return@repeat
-            val gradleStyle = File(dir, "composeApp/native-distribution")
-            if (gradleStyle.isDirectory) return gradleStyle
+            File(dir, "composeApp/native-distribution/common").takeIf { it.isDirectory }?.let { return it }
+            File(dir, "composeApp/native-distribution").takeIf { it.isDirectory }?.let { return it }
             if (dir.name == "composeApp") {
-                val moduleDist = File(dir, "native-distribution")
-                if (moduleDist.isDirectory) return moduleDist
+                File(dir, "native-distribution/common").takeIf { it.isDirectory }?.let { return it }
+                File(dir, "native-distribution").takeIf { it.isDirectory }?.let { return it }
             }
             walk = dir.parentFile
         }
@@ -49,7 +49,9 @@ object BundledNativeTools {
         return f
     }
 
-    fun bundledFfmpeg(): File? = bundledFile("ffmpeg")
+    private fun exeName(name: String): String = if (isWindows()) "$name.exe" else name
+
+    fun bundledFfmpeg(): File? = bundledFile(exeName("ffmpeg"))
 
     fun bundledWhisperCli(): File? {
         val dir = bundledResourcesDirectory() ?: return null
@@ -70,7 +72,7 @@ object BundledNativeTools {
     fun resolveFfmpegPath(): String {
         bundledFfmpeg()?.let { return it.absolutePath }
         // Do not expose manual path settings; prefer bundled tool.
-        return "ffmpeg"
+        return exeName("ffmpeg")
     }
 
     fun resolveWhisperBinaryPath(): String {

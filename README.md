@@ -49,6 +49,8 @@ Compose Desktop can produce installers (e.g. **DMG / MSI / DEB** depending on OS
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
+**JDK requirement:** packaging calls **`jpackage`**, which must exist in the JDK Gradle uses. The **Android Studio embedded JBR** often does **not** include `jpackage`, so `:composeApp:checkRuntime` may fail. Use a **full JDK 17+** (e.g. Eclipse Temurin): in Android Studio set **Gradle JDK** to that JDK, or set `JAVA_HOME` / `org.gradle.java.home` (see comments in `gradle.properties`).
+
 Exact task names may vary by Compose version; use `./gradlew tasks --group="compose desktop"` or your IDE’s Gradle tool window to list them.
 
 ### License
@@ -100,6 +102,8 @@ Windows：
 ```bash
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
+
+**JDK 要求：** 打包会使用 **`jpackage`**，所用 JDK 的 `bin` 目录中必须包含该工具。Android Studio 默认的 **Gradle JDK（嵌入式 JBR）** 往往**没有** `jpackage`，会出现 `:composeApp:checkRuntime` 失败。请改用**完整 JDK 17+**（如 Eclipse Temurin）：在 Android Studio 中将 **Gradle JDK** 指向该 JDK，或配置 `JAVA_HOME` / `org.gradle.java.home`（见仓库根目录 `gradle.properties` 内注释）。
 
 具体任务名随 Compose 版本可能略有变化，可在 IDE 的 Gradle 面板中查看 **compose desktop** 相关任务，或执行 `./gradlew tasks` 检索。
 

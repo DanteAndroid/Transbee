@@ -121,7 +121,7 @@ private fun ActionRow(
         modifier = Modifier.fillMaxWidth(),
     ) {
         if (task.phase == PipelinePhase.Done && task.outputPath != null) {
-            TextButton(onClick = { revealInFileBrowser(File(task.outputPath)) }) {
+            TextButton(onClick = { com.danteandroid.whisperit.utils.OsUtils.revealInFileBrowser(File(task.outputPath)) }) {
                 Text(stringResource(Res.string.action_open_folder))
             }
         }
@@ -213,23 +213,7 @@ private fun phaseChipColors(phase: PipelinePhase): Pair<Color, Color> {
     }
 }
 
-private fun revealInFileBrowser(file: File) {
-    val os = System.getProperty("os.name").orEmpty().lowercase()
-    val revealed = when {
-        "mac" in os -> runCatching {
-            Runtime.getRuntime().exec(arrayOf("open", "-R", file.absolutePath))
-        }.isSuccess
 
-        "win" in os -> runCatching {
-            Runtime.getRuntime().exec(arrayOf("explorer", "/select,${file.absolutePath}"))
-        }.isSuccess
-
-        else -> false
-    }
-    if (!revealed) {
-        runCatching { Desktop.getDesktop().open(file.parentFile ?: file) }
-    }
-}
 
 
 @Preview
