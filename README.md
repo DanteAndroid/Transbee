@@ -31,7 +31,7 @@
 ### Build & run
 
 ```bash
-./gradlew :composeApp:run                # .\gradlew.bat :composeApp:run on Windows
+./gradlew :composeApp:run
 ```
 
 **Generate installers:**
@@ -70,7 +70,7 @@ This project is licensed under [**CC BY-ND 4.0**](https://creativecommons.org/li
 ### 运行与构建
 
 ```bash
-./gradlew :composeApp:run                # Windows 用 .\gradlew.bat :composeApp:run
+./gradlew :composeApp:run
 ```
 
 **生成安装包：**
