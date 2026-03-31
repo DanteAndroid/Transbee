@@ -33,7 +33,7 @@
     <string name="status_free_space_prefix">剩余空间：约 %1$s</string>
     <string name="dialog_about_title">设置</string>
     <string name="label_ui_language">界面语言</string>
-    <string name="dialog_about_body">视频转录、翻译与双语字幕导出。\n版本 1.0</string>
+    <string name="dialog_about_body">视频转录、翻译与双语字幕导出。\n版本 %1$s</string>
     <string name="action_confirm">确定</string>
     <string name="dialog_translation_test_title">翻译服务测试</string>
     <string name="dialog_translation_test_desc">当前引擎：%1$s。使用内置固定测试句；Apple 本机测试超时约 20 秒。</string>

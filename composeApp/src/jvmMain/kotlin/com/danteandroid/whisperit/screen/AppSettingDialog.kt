@@ -47,7 +47,7 @@ fun AppSettingDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(spacing.medium),
             ) {
-                Text(stringResource(Res.string.dialog_about_body))
+                Text(stringResource(Res.string.dialog_about_body, com.danteandroid.whisperit.bundled.BuildConfig.APP_VERSION))
                 HorizontalDivider()
                 Spacer(Modifier.height(spacing.small))
                 Text(

@@ -81,6 +81,13 @@ kotlin {
     }
 }
 
+val gitCommitCount = runCatching {
+    providers.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+    }.standardOutput.asText.get().trim()
+}.getOrElse { "0" }
+val computedPackageVersion = "1.0.$gitCommitCount"
+
 val generateBundledNativeDistributionPath =
     tasks.register<GenerateBundledNativeDistributionPathTask>("generateBundledNativeDistributionPath") {
         group = "build"
@@ -94,8 +101,25 @@ val generateBundledNativeDistributionPath =
         )
     }
 
+val generateBuildConfig = tasks.register("generateBuildConfig") {
+    val outDir = layout.buildDirectory.dir("generated/whisperit/kotlin/com/danteandroid/whisperit/bundled")
+    outputs.dir(outDir)
+    val versionText = computedPackageVersion
+    doLast {
+        val f = outDir.get().file("BuildConfig.kt").asFile
+        f.parentFile.mkdirs()
+        f.writeText("""
+            package com.danteandroid.whisperit.bundled
+            
+            object BuildConfig {
+                const val APP_VERSION = "$versionText"
+            }
+        """.trimIndent())
+    }
+}
+
 tasks.named("compileKotlinJvm") {
-    dependsOn(generateBundledNativeDistributionPath)
+    dependsOn(generateBundledNativeDistributionPath, generateBuildConfig)
 }
 
 val buildAppleTranslateMac = tasks.register<Exec>("buildAppleTranslateMac") {
@@ -346,7 +370,7 @@ compose.desktop {
             modules("java.net.http")
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Whisperit"
-            packageVersion = "1.0.0"
+            packageVersion = computedPackageVersion
             appResourcesRootDir.set(project.layout.projectDirectory.dir("native-distribution"))
             macOS {
                 bundleID = "com.danteandroid.whisperit"

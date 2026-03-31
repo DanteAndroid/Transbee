@@ -40,6 +40,12 @@ import org.jetbrains.compose.resources.stringResource
 import whisperit.composeapp.generated.resources.*
 import java.awt.Desktop
 import java.io.File
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 
 @Composable
 fun TaskRowCard(
@@ -167,8 +173,24 @@ private fun TaskDetailBlock(task: TaskRecord, running: Boolean) {
         !task.error.isNullOrBlank() -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+    
+    val annotatedStr = buildAnnotatedString {
+        val regex = "https?://[\\w\\d:#@%/;$()~_?\\+-=\\\\.&]*".toRegex()
+        var lastIndex = 0
+        regex.findAll(text).forEach { matchResult ->
+            append(text.substring(lastIndex, matchResult.range.first))
+            val url = matchResult.value
+            val linkStyle = TextLinkStyles(style = SpanStyle(textDecoration = TextDecoration.Underline))
+            withLink(LinkAnnotation.Url(url, styles = linkStyle)) {
+                append(url)
+            }
+            lastIndex = matchResult.range.last + 1
+        }
+        append(text.substring(lastIndex))
+    }
+
     Text(
-        text = text,
+        text = annotatedStr,
         style = MaterialTheme.typography.labelSmall,
         color = color,
         minLines = 2,

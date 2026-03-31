@@ -33,7 +33,7 @@
     <string name="status_free_space_prefix">Free Space: %1$s</string>
     <string name="dialog_about_title">Settings</string>
     <string name="label_ui_language">Interface language</string>
-    <string name="dialog_about_body">Video transcription, translation and bilingual subtitle export.\nVersion 1.0</string>
+    <string name="dialog_about_body">Video transcription, translation and bilingual subtitle export.\nVersion %1$s</string>
     <string name="action_confirm">OK</string>
     <string name="dialog_translation_test_title">Translation Service Test</string>
     <string name="dialog_translation_test_desc">Current engine: %1$s. Uses built-in fixed test sentence; Apple local test timeout is about 20s.</string>
