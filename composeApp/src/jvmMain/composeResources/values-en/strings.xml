@@ -108,6 +108,7 @@
     <string name="pdf_format_bilingual">Bilingual (interleaved)</string>
     <string name="pdf_format_original_first">Original first, then translation</string>
     <string name="pdf_format_translation_first">Translation first, then original</string>
+    <string name="pdf_format_source">Source only</string>
     <string name="msg_download_reconnecting">Re-downloading…</string>
     <string name="msg_download_connecting">Connecting and downloading…</string>
     <string name="msg_download_skipped_local">File already present locally; path filled in</string>

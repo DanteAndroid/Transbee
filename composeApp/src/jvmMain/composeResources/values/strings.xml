@@ -108,6 +108,7 @@
     <string name="pdf_format_bilingual">逐段双语</string>
     <string name="pdf_format_original_first">先原文后译文</string>
     <string name="pdf_format_translation_first">先译文后原文</string>
+    <string name="pdf_format_source">仅原文</string>
     <string name="msg_download_reconnecting">正在重新下载…</string>
     <string name="msg_download_connecting">正在连接并下载…</string>
     <string name="msg_download_skipped_local">本地已有该文件，已填入路径</string>
