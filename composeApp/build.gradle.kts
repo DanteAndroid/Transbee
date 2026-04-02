@@ -88,12 +88,8 @@ kotlin {
     }
 }
 
-val gitCommitCount = runCatching {
-    providers.exec {
-        commandLine("git", "rev-list", "--count", "HEAD")
-    }.standardOutput.asText.get().trim()
-}.getOrElse { "0" }
-val computedPackageVersion = "1.0.$gitCommitCount"
+val appVersion = project.findProperty("app.version")?.toString() ?: "1.1.0"
+val computedPackageVersion = appVersion
 
 val generateBundledNativeDistributionPath =
     tasks.register<GenerateBundledNativeDistributionPathTask>("generateBundledNativeDistributionPath") {
