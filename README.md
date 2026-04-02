@@ -16,14 +16,15 @@
 
 ## English
 
-**Transbee** is a **desktop** app for **speech-to-text**, **translation**, and **bilingual subtitle
-export** (SRT, VTT, TXT).
+**Transbee** is a **desktop** app for **speech-to-text**, **translation**, **bilingual subtitle
+export** (SRT, VTT, TXT), and **document recognizition and translation** (PDF and more).
 
 ### Features
 
-- **Transcription** powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`whisper-cli`), with optional **VAD** for better segment boundaries  
-- **Translation** via multiple engines: **Apple Translate** (macOS, on-device), **Google**, **DeepL**, and **OpenAI-compatible** custom LLM APIs  
-- **Export**: subtitle format and content (original / translation / bilingual single or dual files)  
+- **Transcription**: Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`whisper-cli`), with optional **VAD** for better segment boundaries  
+- **Translation**: Multiple engines: **Apple Translate** (macOS, on-device), **Google**, **DeepL**, and **OpenAI-compatible** custom LLM APIs  
+- **Document Processing**: Support for **PDF** and other document formats  
+- **Export**: Subtitle formats (SRT, VTT, TXT) and content (original / translation / bilingual)
 
 ### Tech stack
 
@@ -66,14 +67,15 @@ This project is licensed under [**CC BY-ND 4.0**](https://creativecommons.org/li
 <a name="chinese"></a>
 ## 中文
 
-**Transbee** 是一款支持 **语音转文字**、**翻译** 以及 **双语字幕导出** (SRT, VTT, TXT) 的 **桌面端**
+**Transbee** 是一款支持 **语音转文字**、**翻译**、**双语字幕导出** (SRT, VTT, TXT) 以及 **文档处理** (PDF 等) 的 **桌面端**
 应用。
 
 ### 功能特点
 
 - **转录**：基于 [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`whisper-cli`)，支持可选的 **VAD**（语音活动检测）以获得更好的断句效果。
 - **翻译**：支持多种引擎：**Apple 翻译** (macOS 原生离线)、**Google**、**DeepL** 以及兼容 **OpenAI** 协议的自定义大模型 API。
-- **导出**：支持多种字幕格式及内容选择（原文 / 译文 / 双语单文件或双文件）。
+- **文档处理**：支持 **PDF** 等多种文档格式的识别和翻译。
+- **导出**：支持多种字幕格式 (SRT, VTT, TXT) 及内容选择（原文 / 译文 / 双语）。
 
 ### 技术栈
 
