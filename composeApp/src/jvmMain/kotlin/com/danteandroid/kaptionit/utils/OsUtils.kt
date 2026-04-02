@@ -23,4 +23,16 @@ object OsUtils {
             runCatching { java.awt.Desktop.getDesktop().open(file.parentFile ?: file) }
         }
     }
+
+    fun openFile(file: java.io.File) {
+        runCatching {
+            if (isMacOs()) {
+                Runtime.getRuntime().exec(arrayOf("open", file.absolutePath))
+            } else if (isWindows()) {
+                Runtime.getRuntime().exec(arrayOf("cmd", "/c", "start", "", file.absolutePath))
+            } else {
+                java.awt.Desktop.getDesktop().open(file)
+            }
+        }
+    }
 }

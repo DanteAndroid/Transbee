@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
@@ -33,10 +34,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.danteandroid.kaptionit.AppTheme
-import com.danteandroid.kaptionit.KaptionItTheme
 import com.danteandroid.kaptionit.process.PipelinePhase
 import com.danteandroid.kaptionit.process.isActivelyProcessing
 import com.danteandroid.kaptionit.ui.TaskRecord
@@ -107,11 +106,18 @@ fun TaskRowCard(
             }
 
             if (running) {
-                LinearProgressIndicator(
-                    progress = { task.progress.coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
-                    strokeCap = StrokeCap.Round,
-                )
+                if (task.progressIndeterminate) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                        strokeCap = StrokeCap.Round,
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        progress = { task.progress.coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                        strokeCap = StrokeCap.Round,
+                    )
+                }
             }
             if (task.phase != PipelinePhase.Queued) {
                 TaskDetailBlock(task = task, running = running)
@@ -204,15 +210,17 @@ private fun TaskDetailBlock(task: TaskRecord, running: Boolean) {
         append(text.substring(lastIndex))
     }
 
-    Text(
-        text = annotatedStr,
-        style = MaterialTheme.typography.labelSmall,
-        color = color,
-        minLines = 2,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.fillMaxWidth().padding(top = if (running) 0.dp else 8.dp),
-    )
+    SelectionContainer {
+        Text(
+            text = annotatedStr,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            minLines = 1,
+            maxLines = if (running) 2 else 5,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().padding(top = if (running) 0.dp else 8.dp),
+        )
+    }
 }
 
 @Composable
@@ -247,75 +255,5 @@ private fun phaseChipColors(phase: PipelinePhase): Pair<Color, Color> {
         PipelinePhase.Failed -> cs.errorContainer to cs.onErrorContainer
         PipelinePhase.Queued, PipelinePhase.Cancelled -> cs.surfaceVariant to cs.onSurfaceVariant
         else -> cs.primaryContainer to cs.onPrimaryContainer
-    }
-}
-
-
-
-
-@Preview
-@Composable
-private fun TaskRowCardQueuedPreview() {
-    KaptionItTheme {
-        Column(Modifier.padding(16.dp)) {
-            TaskRowCard(
-                task = TaskRecord(
-                    id = "1",
-                    fileName = "interview_2024.mp4",
-                    phase = PipelinePhase.Transcribing,
-                    progress = 0.45f,
-                    message = "Transcribing segment 12/27…",
-                ),
-                onDelete = {},
-                onRetry = {},
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun TaskRowCardDonePreview() {
-    KaptionItTheme {
-        Column(Modifier.padding(16.dp)) {
-            TaskRowCard(
-                task = TaskRecord(
-                    id = "2",
-                    fileName = "lecture.mp4",
-                    sourcePath = "/tmp/lecture.mp4",
-                    phase = PipelinePhase.Done,
-                    progress = 1f,
-                    outputPath = "/tmp/lecture.srt",
-                    translationStats = TranslationTaskStats(
-                        recognitionDurationMs = 83_000L,
-                        translationDurationMs = 164_000L,
-                        lineCount = 823,
-                        requestCount = 4,
-                        retryCount = 1,
-                    ),
-                ),
-                onDelete = {},
-                onRetry = {},
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun TaskRowCardFailedPreview() {
-    KaptionItTheme {
-        Column(Modifier.padding(16.dp)) {
-            TaskRowCard(
-                task = TaskRecord(
-                    id = "3",
-                    fileName = "broken.avi",
-                    phase = PipelinePhase.Failed,
-                    error = "FFmpeg exited with code 1",
-                ),
-                onDelete = {},
-                onRetry = {},
-            )
-        }
     }
 }

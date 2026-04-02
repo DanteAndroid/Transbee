@@ -5,6 +5,7 @@
 
 package com.danteandroid.kaptionit.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.border
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,6 +57,7 @@ import androidx.compose.ui.draganddrop.dragData
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.danteandroid.kaptionit.AppTheme
 import com.danteandroid.kaptionit.KaptionItTheme
 import com.danteandroid.kaptionit.process.PipelinePhase
@@ -61,7 +65,7 @@ import com.danteandroid.kaptionit.process.isActivelyProcessing
 import com.danteandroid.kaptionit.ui.ModelDownloadUiState
 import com.danteandroid.kaptionit.ui.TaskRecord
 import com.danteandroid.kaptionit.utils.fileFromDragDropPath
-import com.danteandroid.kaptionit.utils.pickVideoFileWithChooser
+import com.danteandroid.kaptionit.utils.pickFilesWithChooser
 import kaptionit.composeapp.generated.resources.Res
 import kaptionit.composeapp.generated.resources.action_cancel
 import kaptionit.composeapp.generated.resources.action_choose_file
@@ -73,11 +77,13 @@ import kaptionit.composeapp.generated.resources.action_start_all
 import kaptionit.composeapp.generated.resources.action_test
 import kaptionit.composeapp.generated.resources.app_title
 import kaptionit.composeapp.generated.resources.confirm_delete_all
+import kaptionit.composeapp.generated.resources.drag_to_start_hint
 import kaptionit.composeapp.generated.resources.drop_zone_hint
 import kaptionit.composeapp.generated.resources.state_downloading
 import kaptionit.composeapp.generated.resources.status_free_space_prefix
 import kaptionit.composeapp.generated.resources.status_model_prefix
-import kaptionit.composeapp.generated.resources.task_list_title
+import kaptionit.composeapp.generated.resources.tasks_completed
+import kaptionit.composeapp.generated.resources.tasks_processing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,10 +93,18 @@ import java.io.File
 private val taskSortComparator =
     compareByDescending<TaskRecord> { it.phase.isActivelyProcessing() }.thenBy { it.createdAtMs }
 
+private val allowedExtensions = setOf(
+    "mp4", "mkv", "avi", "mov", "webm", "flv", "wmv", // Video
+    "mp3", "wav", "aac", "flac", "m4a", "ogg", "wma", // Audio
+    "pdf", "doc", "docx", "ppt", "pptx",               // Documents (MinerU)
+    "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", // Images (MinerU)
+    "txt", "md",                                        // Text (direct translate)
+)
+
 @Composable
 fun AppTaskScreen(
     tasks: List<TaskRecord>,
-    onFileSelected: (File) -> Unit,
+    onFilesSelected: (List<File>) -> Unit,
     onDeleteTask: (String) -> Unit,
     onRetryTask: (String) -> Unit,
     onStartAll: () -> Unit,
@@ -100,79 +114,206 @@ fun AppTaskScreen(
 ) {
     val spacing = AppTheme.spacing
     val scope = rememberCoroutineScope()
-    val currentOnFileSelected = rememberUpdatedState(onFileSelected)
+    val currentOnFilesSelected = rememberUpdatedState(onFilesSelected)
+
+    var isDragging by remember { mutableStateOf(false) }
+
+    val handleFilesSelection = { files: List<File> ->
+        currentOnFilesSelected.value(files)
+    }
 
     val dropTarget = remember {
         object : DragAndDropTarget {
+            override fun onEntered(event: DragAndDropEvent) {
+                isDragging = true
+            }
+
+            override fun onExited(event: DragAndDropEvent) {
+                isDragging = false
+            }
+
+            override fun onEnded(event: DragAndDropEvent) {
+                isDragging = false
+            }
+
             override fun onDrop(event: DragAndDropEvent): Boolean {
+                isDragging = false
                 val data = event.dragData()
                 if (data !is DragData.FilesList) return false
                 val files = data.readFiles().mapNotNull { fileFromDragDropPath(it) }
                 if (files.isEmpty()) return false
-                files.forEach { currentOnFileSelected.value(it) }
+                handleFilesSelection(files)
                 return true
             }
         }
     }
 
-    Column(modifier.fillMaxHeight()) {
-        DropZone(
-            onChooseFile = {
-                scope.launch {
-                    val file = withContext(Dispatchers.IO) { pickVideoFileWithChooser() }
-                    if (file != null) currentOnFileSelected.value(file)
-                }
-            },
-            dropTarget = dropTarget,
-        )
-
-        if (tasks.isEmpty()) {
-            Box(
-                Modifier.weight(1f).fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(Res.string.app_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-            }
-        } else {
-            TaskListHeader(
-                onStartAll = onStartAll,
-                onPauseAll = onPauseAll,
-                onDeleteAll = onDeleteAll,
-            )
-
-            val listState = rememberLazyListState()
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                LazyColumn(
-                    state = listState,
-                    verticalArrangement = Arrangement.spacedBy(spacing.small),
-                    contentPadding = PaddingValues(top = 16.dp, end = 12.dp, bottom = 16.dp),
-                    modifier = Modifier.fillMaxSize(),
+    Box(
+        modifier
+            .fillMaxHeight()
+            .dragAndDropTarget(shouldStartDragAndDrop = { true }, target = dropTarget)
+    ) {
+        Column(Modifier.fillMaxSize()) {
+            if (tasks.isEmpty()) {
+                Box(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    items(
-                        tasks.sortedWith(taskSortComparator),
-                        key = { it.id },
-                    ) { task ->
-                        TaskRowCard(
-                            task = task,
-                            onDelete = { onDeleteTask(task.id) },
-                            onRetry = { onRetryTask(task.id) },
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(spacing.medium)
+                    ) {
+                        Text(
+                            stringResource(Res.string.app_title),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontSize = 36.sp,
+                                letterSpacing = 1.sp
+                            ),
+                        )
+                        Spacer(Modifier.height(32.dp))
+                        Icon(
+                            Icons.Default.UploadFile,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        )
+                        Text(
+                            stringResource(Res.string.drop_zone_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(onClick = {
+                            scope.launch {
+                                val files = withContext(Dispatchers.IO) { pickFilesWithChooser() }
+                                if (files.isNotEmpty()) handleFilesSelection(files)
+                            }
+                        }) {
+                            Text(stringResource(Res.string.action_choose_file))
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TaskListHeader(
+                        onChooseFiles = {
+                            scope.launch {
+                                val files = withContext(Dispatchers.IO) { pickFilesWithChooser() }
+                                if (files.isNotEmpty()) handleFilesSelection(files)
+                            }
+                        },
+                        onStartAll = onStartAll,
+                        onPauseAll = onPauseAll,
+                        onDeleteAll = onDeleteAll,
+                    )
+                }
+
+                val processingTasks = tasks.filter { it.phase != PipelinePhase.Done }
+                    .sortedWith(taskSortComparator)
+                val completedTasks = tasks.filter { it.phase == PipelinePhase.Done }
+                    .sortedWith(taskSortComparator)
+
+                val listState = rememberLazyListState()
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    LazyColumn(
+                        state = listState,
+                        verticalArrangement = Arrangement.spacedBy(spacing.small),
+                        contentPadding = PaddingValues(top = 8.dp, end = 12.dp, bottom = 16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (processingTasks.isNotEmpty()) {
+                            item(key = "section_processing") {
+                                TaskSectionHeader(stringResource(Res.string.tasks_processing))
+                            }
+                            items(
+                                processingTasks,
+                                key = { it.id },
+                            ) { task ->
+                                TaskRowCard(
+                                    task = task,
+                                    onDelete = { onDeleteTask(task.id) },
+                                    onRetry = { onRetryTask(task.id) },
+                                )
+                            }
+                        }
+
+                        if (completedTasks.isNotEmpty()) {
+                            item(key = "section_completed") {
+                                TaskSectionHeader(
+                                    stringResource(Res.string.tasks_completed),
+                                    Modifier.padding(top = spacing.medium)
+                                )
+                            }
+                            items(
+                                completedTasks,
+                                key = { it.id },
+                            ) { task ->
+                                TaskRowCard(
+                                    task = task,
+                                    onDelete = { onDeleteTask(task.id) },
+                                    onRetry = { onRetryTask(task.id) },
+                                )
+                            }
+                        }
+                    }
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(listState),
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
+                }
+            }
+        }
+
+        if (isDragging) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxSize().padding(2.dp),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.UploadFile,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.height(spacing.medium))
+                        Text(
+                            stringResource(Res.string.drag_to_start_hint),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
-                VerticalScrollbar(
-                    adapter = rememberScrollbarAdapter(listState),
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                )
             }
         }
     }
 }
 
 @Composable
+private fun TaskSectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = AppTheme.spacing
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small),
+    )
+}
+
+@Composable
 private fun TaskListHeader(
+    onChooseFiles: () -> Unit,
     onStartAll: () -> Unit,
     onPauseAll: () -> Unit,
     onDeleteAll: () -> Unit,
@@ -185,14 +326,31 @@ private fun TaskListHeader(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(top = spacing.xxLarge, bottom = spacing.small),
+            .padding(bottom = spacing.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            stringResource(Res.string.task_list_title),
-            style = MaterialTheme.typography.titleSmall,
+            stringResource(Res.string.app_title),
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = 22.sp,
+                lineHeight = 28.sp,
+                letterSpacing = 0.8.sp,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.weight(1f))
+        TextButton(onClick = onChooseFiles) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.xSmall),
+            ) {
+                Text("+", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    stringResource(Res.string.action_choose_file),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
         Box {
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(32.dp)) {
                 Icon(
@@ -250,7 +408,6 @@ private fun TaskListHeader(
 @Composable
 private fun DropZone(
     onChooseFile: () -> Unit,
-    dropTarget: DragAndDropTarget,
     modifier: Modifier = Modifier,
 ) {
     val spacing = AppTheme.spacing
@@ -259,7 +416,6 @@ private fun DropZone(
             .fillMaxWidth()
             .defaultMinSize(minHeight = 160.dp)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
-            .dragAndDropTarget(shouldStartDragAndDrop = { true }, target = dropTarget)
             .padding(spacing.large),
         contentAlignment = Alignment.Center,
     ) {
@@ -384,7 +540,7 @@ private fun AppTaskScreenPreview() {
                     message = "Queued"
                 ),
             ),
-            onFileSelected = {},
+            onFilesSelected = {},
             onDeleteTask = {},
             onRetryTask = {},
             onStartAll = {},

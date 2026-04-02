@@ -58,7 +58,7 @@ object TranslationService {
         val deeplTarget = TargetLanguageMapper.toDeepLTargetCode(cfg.targetLanguage)
         
         onProgressUpdate(
-            0.65f,
+            0f,
             when (engine) {
                 TranslationEngine.APPLE -> JvmResourceStrings.text(Res.string.msg_translate_apple_running)
                 TranslationEngine.GOOGLE -> JvmResourceStrings.text(Res.string.msg_translate_google_running)
@@ -200,11 +200,7 @@ object TranslationService {
         }
 
         val results = if (concurrency <= 1) {
-            chunks.mapIndexed { idx, chunk ->
-                onProgressUpdate(
-                    (0.65f + 0.3f * idx / chunks.size.coerceAtLeast(1)).coerceIn(0f, 0.98f),
-                    progressMessage(doneCount.get(), totalSegments)
-                )
+            chunks.map { chunk ->
                 val (sourceTexts, missingIndexes, missingTexts) = buildPart(chunk)
                 val part = MutableList(sourceTexts.size) { i -> translatedCache[sourceTexts[i]] ?: sourceTexts[i] }
                 if (missingTexts.isNotEmpty()) {
@@ -216,6 +212,10 @@ object TranslationService {
                     }
                 }
                 doneCount.addAndGet(chunk.size)
+                onProgressUpdate(
+                    (doneCount.get().toFloat() / totalSegments).coerceIn(0f, 0.99f),
+                    progressMessage(doneCount.get(), totalSegments),
+                )
                 part
             }
         } else {
@@ -236,8 +236,8 @@ object TranslationService {
                             }
                             val done = doneCount.addAndGet(chunk.size)
                             onProgressUpdate(
-                                (0.65f + 0.3f * done / totalSegments).coerceIn(0f, 0.98f),
-                                progressMessage(done, totalSegments)
+                                (done.toFloat() / totalSegments).coerceIn(0f, 0.99f),
+                                progressMessage(done, totalSegments),
                             )
                             part
                         }
@@ -246,7 +246,7 @@ object TranslationService {
             }
         }
 
-        onProgressUpdate(0.95f, progressMessage(totalSegments, totalSegments))
+        onProgressUpdate(1f, progressMessage(totalSegments, totalSegments))
         return results.flatten()
     }
 

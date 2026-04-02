@@ -2,6 +2,7 @@ package com.danteandroid.kaptionit.ui
 
 import androidx.compose.runtime.Composable
 import com.danteandroid.kaptionit.process.PipelinePhase
+import com.danteandroid.kaptionit.settings.PdfTranslateFormat
 import com.danteandroid.kaptionit.translate.TranslationEngine
 import kaptionit.composeapp.generated.resources.Res
 import kaptionit.composeapp.generated.resources.engine_apple
@@ -20,6 +21,9 @@ import kaptionit.composeapp.generated.resources.lang_ko
 import kaptionit.composeapp.generated.resources.lang_whisper_auto
 import kaptionit.composeapp.generated.resources.lang_zh_cn
 import kaptionit.composeapp.generated.resources.lang_zh_tw
+import kaptionit.composeapp.generated.resources.pdf_format_bilingual
+import kaptionit.composeapp.generated.resources.pdf_format_original_first
+import kaptionit.composeapp.generated.resources.pdf_format_translation_first
 import kaptionit.composeapp.generated.resources.phase_cancelled
 import kaptionit.composeapp.generated.resources.phase_done
 import kaptionit.composeapp.generated.resources.phase_extracting
@@ -80,6 +84,13 @@ val TranslationEngine.labelRes: StringResource
         TranslationEngine.GOOGLE -> Res.string.engine_google
         TranslationEngine.DEEPL -> Res.string.engine_deepl
         TranslationEngine.OPENAI -> Res.string.engine_openai
+    }
+
+val PdfTranslateFormat.labelRes: StringResource
+    get() = when (this) {
+        PdfTranslateFormat.BILINGUAL -> Res.string.pdf_format_bilingual
+        PdfTranslateFormat.ORIGINAL_FIRST -> Res.string.pdf_format_original_first
+        PdfTranslateFormat.TRANSLATION_FIRST -> Res.string.pdf_format_translation_first
     }
 
 val PipelinePhase.label: String

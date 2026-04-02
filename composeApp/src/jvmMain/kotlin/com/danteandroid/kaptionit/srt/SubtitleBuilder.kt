@@ -36,7 +36,7 @@ object SubtitleBuilder {
         val stats: TranslationTaskStats?
 
         if (!needsTranslation) {
-            onProgressUpdate(0.8f, JvmResourceStrings.text(Res.string.msg_skip_translate))
+            onProgressUpdate(1f, JvmResourceStrings.text(Res.string.msg_skip_translate))
             translated = segments.map { it.text }
             stats = TranslationTaskStats(
                 recognitionDurationMs = recognitionDurationMs,

@@ -5,6 +5,18 @@ import com.danteandroid.kaptionit.utils.OsUtils
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class PdfTranslateFormat {
+    /** 一段原文紧跟一段译文 */
+    BILINGUAL,
+
+    /** 全部原文在前，全部译文在后 */
+    ORIGINAL_FIRST,
+
+    /** 全部译文在前，全部原文在后 */
+    TRANSLATION_FIRST,
+}
+
+@Serializable
 data class ToolingSettings(
     val whisperModel: String = "",
     val whisperLanguage: String = "auto",
@@ -21,6 +33,8 @@ data class ToolingSettings(
     val openAiBaseUrl: String = "https://api.openai.com/v1",
     val openAiModel: String = "gpt-5-mini",
     val targetLanguage: String = "简体中文",
+    val minerUToken: String = "",
+    val pdfTranslateFormat: PdfTranslateFormat = PdfTranslateFormat.BILINGUAL,
 ) {
     fun normalized(): ToolingSettings {
         val normalizedOutputs = subtitleOutputs

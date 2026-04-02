@@ -17,19 +17,24 @@ import com.danteandroid.kaptionit.utils.toReadableByteSize
 import com.danteandroid.kaptionit.whisper.WhisperModelDownloader
 import com.danteandroid.kaptionit.whisper.WhisperModelOption
 import kaptionit.composeapp.generated.resources.Res
+import kaptionit.composeapp.generated.resources.duration_format_min_sec
+import kaptionit.composeapp.generated.resources.duration_format_sec_only
 import kaptionit.composeapp.generated.resources.err_apple_translate_macos_only
 import kaptionit.composeapp.generated.resources.err_apple_translate_missing
 import kaptionit.composeapp.generated.resources.err_deepl_key
 import kaptionit.composeapp.generated.resources.err_file_read
 import kaptionit.composeapp.generated.resources.err_google_key
+import kaptionit.composeapp.generated.resources.err_mineru_token_missing
 import kaptionit.composeapp.generated.resources.err_openai_key
 import kaptionit.composeapp.generated.resources.err_queue_while_downloading
 import kaptionit.composeapp.generated.resources.err_retry_failed
+import kaptionit.composeapp.generated.resources.err_unsupported_file_type
 import kaptionit.composeapp.generated.resources.err_whisper_model_missing
 import kaptionit.composeapp.generated.resources.msg_download_complete
 import kaptionit.composeapp.generated.resources.msg_download_connecting
 import kaptionit.composeapp.generated.resources.msg_download_reconnecting
 import kaptionit.composeapp.generated.resources.msg_download_skipped_local
+import kaptionit.composeapp.generated.resources.msg_total_duration
 import kaptionit.composeapp.generated.resources.phase_cancelled
 import kaptionit.composeapp.generated.resources.phase_done_short
 import kaptionit.composeapp.generated.resources.phase_queued
@@ -45,6 +50,16 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
 
+private val mineruDocExtensions = setOf(
+    "pdf", "doc", "docx", "ppt", "pptx",
+    "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp",
+)
+private val textExtensions = setOf("txt", "md")
+private val mediaExtensions = setOf(
+    "mp4", "mkv", "avi", "mov", "webm", "flv", "wmv",
+    "mp3", "wav", "aac", "flac", "m4a", "ogg", "wma",
+)
+
 class PipelineViewModel : ViewModel() {
 
     private val _tooling = MutableStateFlow(ToolingSettingsStore.loadOrDefault())
@@ -57,9 +72,13 @@ class PipelineViewModel : ViewModel() {
     val modelDownload: StateFlow<ModelDownloadUiState> = _modelDownload.asStateFlow()
 
     private val fileQueue = ArrayDeque<Pair<String, File>>()
+    private val pipelineStartLock = Any()
     private var pipelineJob: Job? = null
     private var currentRunningTaskId: String? = null
     private var modelDownloadJob: Job? = null
+
+    private var lastAutoOpenTaskId: String? = null
+
 
     fun clearTranscriptionCache() {
         TranscriptionCacheStore.clearAll()
@@ -135,7 +154,40 @@ class PipelineViewModel : ViewModel() {
         modelDownloadJob?.cancel()
     }
 
-    fun enqueuePipeline(videoFile: File): String? {
+    private fun validateTranslationEngine(cfg: ToolingSettings): String? =
+        when (cfg.translationEngine) {
+            TranslationEngine.APPLE -> {
+                when {
+                    !OsUtils.isMacOs() -> JvmResourceStrings.text(Res.string.err_apple_translate_macos_only)
+                    AppleTranslateBinary.resolvePath(cfg.appleTranslateBinary) == null ->
+                        JvmResourceStrings.text(Res.string.err_apple_translate_missing)
+
+                    else -> null
+                }
+            }
+
+            TranslationEngine.GOOGLE -> cfg.googleApiKey.ifBlank {
+                return JvmResourceStrings.text(
+                    Res.string.err_google_key
+                )
+            }.let { null }
+
+            TranslationEngine.DEEPL -> if (cfg.deeplApiKey.isBlank()) JvmResourceStrings.text(Res.string.err_deepl_key) else null
+            TranslationEngine.OPENAI -> if (cfg.openAiKey.isBlank()) JvmResourceStrings.text(Res.string.err_openai_key) else null
+        }
+
+    fun onFilesSelected(files: List<File>) {
+        if (files.isEmpty()) return
+        val isSingleFileBatch = files.size == 1
+        files.forEach { file ->
+            val taskId = enqueuePipeline(file)
+            if (isSingleFileBatch && taskId != null) {
+                lastAutoOpenTaskId = taskId
+            }
+        }
+    }
+
+    fun enqueuePipeline(videoFile: File): String {
         if (_modelDownload.value.active) {
             return JvmResourceStrings.text(Res.string.err_queue_while_downloading)
         }
@@ -143,30 +195,30 @@ class PipelineViewModel : ViewModel() {
             return JvmResourceStrings.text(Res.string.err_file_read, videoFile.path)
         }
         val cfg = _tooling.value
-        if (cfg.whisperModel.isBlank()) {
-            return JvmResourceStrings.text(Res.string.err_whisper_model_missing)
+        val ext = videoFile.extension.lowercase()
+
+        when {
+            ext in mineruDocExtensions -> {
+                if (cfg.minerUToken.isBlank()) {
+                    return JvmResourceStrings.text(Res.string.err_mineru_token_missing)
+                }
+            }
+
+            ext in textExtensions -> {
+                // txt/md 直接走翻译，只需翻译引擎校验
+                validateTranslationEngine(cfg)?.let { return it }
+            }
+
+            ext in mediaExtensions -> {
+                if (cfg.whisperModel.isBlank()) {
+                    return JvmResourceStrings.text(Res.string.err_whisper_model_missing)
+                }
+                validateTranslationEngine(cfg)?.let { return it }
+            }
+
+            else -> return JvmResourceStrings.text(Res.string.err_unsupported_file_type)
         }
-        when (cfg.translationEngine) {
-            TranslationEngine.APPLE -> {
-                if (!OsUtils.isMacOs()) {
-                    return JvmResourceStrings.text(Res.string.err_apple_translate_macos_only)
-                }
-                if (AppleTranslateBinary.resolvePath(cfg.appleTranslateBinary) == null) {
-                    return JvmResourceStrings.text(Res.string.err_apple_translate_missing)
-                }
-            }
-            TranslationEngine.GOOGLE -> {
-                if (cfg.googleApiKey.isBlank()) {
-                    return JvmResourceStrings.text(Res.string.err_google_key)
-                }
-            }
-            TranslationEngine.DEEPL -> {
-                if (cfg.deeplApiKey.isBlank()) return JvmResourceStrings.text(Res.string.err_deepl_key)
-            }
-            TranslationEngine.OPENAI -> {
-                if (cfg.openAiKey.isBlank()) return JvmResourceStrings.text(Res.string.err_openai_key)
-            }
-        }
+
         val id = UUID.randomUUID().toString()
         _tasks.update {
             it + TaskRecord(
@@ -179,7 +231,7 @@ class PipelineViewModel : ViewModel() {
         }
         fileQueue.addLast(id to videoFile)
         startNextIfIdle()
-        return null
+        return id
     }
 
     fun retryTask(id: String): String? {
@@ -297,27 +349,34 @@ class PipelineViewModel : ViewModel() {
     }
 
     private fun startNextIfIdle() {
-        if (pipelineJob?.isActive == true) return
-        val next = fileQueue.removeFirstOrNull() ?: return
-        val (id, file) = next
-        pipelineJob = viewModelScope.launch(Dispatchers.Default) {
-            val myJob = coroutineContext[Job]!!
-            try {
-                runPipelineInternal(id, file)
-            } catch (e: CancellationException) {
-                updateTask(id) {
-                    it.copy(
-                        phase = PipelinePhase.Cancelled,
-                        message = JvmResourceStrings.text(Res.string.phase_cancelled),
-                        progress = 0f,
-                    )
-                }
-                throw e
-            } finally {
-                if (currentRunningTaskId == id) currentRunningTaskId = null
-                if (pipelineJob === myJob) {
-                    pipelineJob = null
-                    startNextIfIdle()
+        synchronized(pipelineStartLock) {
+            if (pipelineJob?.isActive == true) return
+            val next = fileQueue.removeFirstOrNull() ?: return
+            val (id, file) = next
+            pipelineJob = viewModelScope.launch(Dispatchers.Default) {
+                val myJob = coroutineContext[Job]!!
+                try {
+                    runPipelineInternal(id, file)
+                } catch (e: CancellationException) {
+                    updateTask(id) {
+                        it.copy(
+                            phase = PipelinePhase.Cancelled,
+                            message = JvmResourceStrings.text(Res.string.phase_cancelled),
+                            progress = 0f,
+                        )
+                    }
+                    throw e
+                } finally {
+                    if (currentRunningTaskId == id) currentRunningTaskId = null
+                    val shouldStartNext = synchronized(pipelineStartLock) {
+                        if (pipelineJob === myJob) {
+                            pipelineJob = null
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    if (shouldStartNext) startNextIfIdle()
                 }
             }
         }
@@ -343,38 +402,73 @@ class PipelineViewModel : ViewModel() {
         val cfg = _tooling.value
 
         val listener = object : PipelineListener {
-            override fun onStateChange(phase: PipelinePhase, message: String, progress: Float) {
+            override fun onStateChange(
+                phase: PipelinePhase,
+                message: String,
+                progress: Float,
+                indeterminate: Boolean
+            ) {
                 updateTaskFromPipeline(id) {
-                    it.copy(phase = phase, message = message, progress = progress)
+                    it.copy(
+                        phase = phase,
+                        message = message,
+                        progress = progress.coerceIn(0f, 1f),
+                        progressIndeterminate = indeterminate,
+                    )
                 }
             }
 
-            override fun onProgress(message: String, progress: Float?) {
+            override fun onProgress(message: String, progress: Float?, indeterminate: Boolean) {
                 updateTaskFromPipeline(id) {
-                    val p = progress ?: it.progress
-                    it.copy(message = message, progress = p)
+                    it.copy(
+                        message = message,
+                        progress = progress?.coerceIn(0f, 1f) ?: it.progress,
+                        progressIndeterminate = indeterminate,
+                    )
                 }
             }
 
             override fun onCompleted(outputPath: String?, translationStats: TranslationTaskStats?) {
                 updateTaskFromPipeline(id) {
-                    it.copy(
+                    val durationMs = System.currentTimeMillis() - it.createdAtMs
+                    val totalSec = ((durationMs + 500) / 1000).coerceAtLeast(1)
+                    val m = (totalSec / 60).toInt()
+                    val s = (totalSec % 60).toInt()
+                    val durationStr = if (m > 0) {
+                        JvmResourceStrings.text(Res.string.duration_format_min_sec, m, s)
+                    } else {
+                        JvmResourceStrings.text(Res.string.duration_format_sec_only, s)
+                    }
+
+                    val updated = it.copy(
                         phase = PipelinePhase.Done,
-                        message = JvmResourceStrings.text(Res.string.phase_done_short),
+                        message = if (translationStats == null) {
+                            JvmResourceStrings.text(Res.string.msg_total_duration, durationStr)
+                        } else {
+                            JvmResourceStrings.text(Res.string.phase_done_short)
+                        },
                         progress = 1f,
+                        progressIndeterminate = false,
                         outputPath = outputPath ?: it.outputPath,
                         error = null,
                         translationStats = translationStats
                     )
+                    if (id == lastAutoOpenTaskId && updated.outputPath != null) {
+                        OsUtils.openFile(File(updated.outputPath!!))
+                        lastAutoOpenTaskId = null
+                    }
+                    updated
                 }
             }
 
             override fun onError(error: String) {
+                System.err.println("Pipeline Error [Task $id, File ${file.name}]: $error")
                 updateTaskFromPipeline(id) {
                     it.copy(
                         phase = PipelinePhase.Failed,
                         message = "",
                         progress = 0f,
+                        progressIndeterminate = false,
                         error = error,
                         translationStats = null
                     )

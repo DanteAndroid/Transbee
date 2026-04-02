@@ -8,6 +8,7 @@ data class TaskRecord(
     val sourcePath: String? = null,
     val phase: PipelinePhase = PipelinePhase.Idle,
     val progress: Float = 0f,
+    val progressIndeterminate: Boolean = false,
     val message: String = "",
     val outputPath: String? = null,
     val error: String? = null,

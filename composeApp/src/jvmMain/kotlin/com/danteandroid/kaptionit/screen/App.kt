@@ -130,9 +130,8 @@ fun App() {
                         VerticalDivider(Modifier.width(1.dp).fillMaxHeight())
                         AppTaskScreen(
                             tasks = tasks,
-                            onFileSelected = { file ->
-                                val err = viewModel.enqueuePipeline(file)
-                                if (err != null) scope.launch { snackbarHostState.showSnackbar(err) }
+                            onFilesSelected = { files ->
+                                viewModel.onFilesSelected(files)
                             },
                             onDeleteTask = viewModel::deleteTask,
                             onRetryTask = { id ->
@@ -161,6 +160,8 @@ fun App() {
 
         if (showSetting) {
             AppSettingDialog(
+                tooling = tooling,
+                onUpdateTooling = viewModel::updateTooling,
                 onDismissRequest = { showSetting = false },
                 onLocaleZh = { appLanguage = AppLanguage.ZH; AppLocale.apply(AppLanguage.ZH) },
                 onLocaleEn = { appLanguage = AppLanguage.EN; AppLocale.apply(AppLanguage.EN) },
