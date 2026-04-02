@@ -41,8 +41,18 @@ export** (SRT, VTT, TXT).
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-> [!IMPORTANT]
-> **JDK 17+ with `jpackage` is required.** The default Android Studio JBR may lack it. Set a full JDK (e.g., zulu) in Gradle settings if needed.
+
+### Troubleshooting
+
+#### macOS Build Failure (AppleTranslate)
+If you encounter an error like `Process 'command 'swift'' finished with non-zero exit value 1` during `:composeApp:buildAppleTranslateMac`, it is often due to a stale Swift build cache after moving or renaming the project directory.
+
+**Solution:**
+Run the following command to clean the Swift package cache:
+```bash
+cd native/AppleTranslate && swift package clean && cd ../..
+```
+Then retry the build.
 
 ### License
 
@@ -81,8 +91,18 @@ This project is licensed under [**CC BY-ND 4.0**](https://creativecommons.org/li
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-> [!IMPORTANT]
-> **需要包含 `jpackage` 的 JDK 17+**。Android Studio 自带的 JBR 可能不含该工具，如遇报错请在 Gradle 设置中切换至完整的 JDK（如 Temurin）。
+
+### 常见问题排查
+
+#### macOS 构建失败 (AppleTranslate)
+如果在执行 `:composeApp:buildAppleTranslateMac` 时遇到 `Process 'command 'swift'' finished with non-zero exit value 1` 错误，通常是因为移动或重命名了项目目录导致 Swift 构建缓存失效。
+
+**解决方法：**
+执行以下命令清理 Swift 包缓存：
+```bash
+cd native/AppleTranslate && swift package clean && cd ../..
+```
+然后重新尝试构建。
 
 ### 开源许可
 
