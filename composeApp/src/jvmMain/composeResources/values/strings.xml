@@ -51,6 +51,7 @@
     <string name="confirm_delete_all">确定要删除全部任务吗？</string>
     <string name="action_open_folder">📂 文件夹</string>
     <string name="action_open_video">📄 打开</string>
+    <string name="action_play">▶ 播放</string>
     <string name="action_retry_recognize">重新识别</string>
     <string name="phase_queued">排队中</string>
     <string name="phase_extracting">提取音频</string>
@@ -92,11 +93,11 @@
     <string name="err_mineru_token_expired">MinerU Token 已过期：已为您打开申请页面，请更换新 Token 后重试。</string>
     <string name="dialog_mineru_help_link">前往 MinerU 官方 API 管理页</string>
     <string name="dialog_mineru_help_url">https://mineru.net/apiManage/docs</string>
-    <string name="dialog_custom_llm_help_title">自定义大模型</string>
-    <string name="dialog_custom_llm_help_body">支持 OpenAI 和大多数国产大模型：\n\nDeepSeek：\n接口地址：https://api.deepseek.com/v1\n模型名：deepseek-chat 或 deepseek-reasoner\n\n智谱 AI (ChatGLM)：\n接口地址：https://open.bigmodel.cn/api/paas/v4/\n模型名：glm-4\n\n通义千问 (Aliyun)：\n接口地址：https://dashscope.aliyuncs.com/compatible-mode/v1\n模型名：qwen-plus 或 qwen-max</string>
+    <string name="dialog_custom_llm_title">自定义大模型</string>
+    <string name="dialog_custom_llm_body">支持 OpenAI 和大多数国产大模型：\n\nDeepSeek：\n接口地址：https://api.deepseek.com/v1\n模型名：deepseek-chat 或 deepseek-reasoner\n\n智谱 AI (ChatGLM)：\n接口地址：https://open.bigmodel.cn/api/paas/v4/\n模型名：glm-4\n\n通义千问 (Aliyun)：\n接口地址：https://dashscope.aliyuncs.com/compatible-mode/v1\n模型名：qwen-plus 或 qwen-max</string>
     <string name="msg_mineru_uploading">正在上传文件到 MinerU…… %1$s / %2$s</string>
     <string name="msg_mineru_status_waiting">等待中</string>
-    <string name="msg_mineru_processing">MinerU 正在解析文档 · %1$s…</string>
+    <string name="msg_mineru_processing">MinerU 正在解析文档…</string>
     <string name="msg_mineru_downloading">正在下载识别结果…… %1$s / %2$s</string>
     <string name="msg_mineru_extracting">正在解压并生成 Markdown…</string>
     <string name="tasks_processing">处理中</string>
@@ -104,7 +105,7 @@
     <string name="msg_total_duration">总耗时：%1$s</string>
     <string name="err_mineru_token_missing">请先在设置中填写 MinerU Token。</string>
     <string name="msg_pdf_translating">正在翻译文档内容…… %1$d / %2$d 段…</string>
-    <string name="label_markdown_format">Markdown 格式</string>
+    <string name="label_markdown_format">MD 格式</string>
     <string name="pdf_format_bilingual">逐段双语</string>
     <string name="pdf_format_original_first">先原文后译文</string>
     <string name="pdf_format_translation_first">先译文后原文</string>
@@ -120,14 +121,16 @@
     <string name="err_apple_translate_macos_only">Apple 翻译仅在 macOS 上可用。</string>
     <string name="err_google_key">请填写 Google 翻译密钥。</string>
     <string name="err_translation_no_response">翻译接口长时间无响应，请检查网络或翻译服务。</string>
-    <string name="err_translation_rate_limited">翻译频率过快，请检查翻译接口。</string>
+    <string name="err_translation_rate_limited">翻译请求过于频繁，请检查翻译 API 额度，或稍后再试。</string>
+    <string name="err_translate_retry_failed">重试失败：%1$s</string>
     <string name="err_deepl_key">请填写 DeepL 密钥。</string>
     <string name="err_openai_key">请填写服务商 API 密钥。</string>
     <string name="err_retry_failed">重试失败：%1$s</string>
     <string name="warn_start_all_missing_files">有 %1$d 个任务的源文件不存在，已跳过并标记失败。</string>
     <string name="msg_transcription_cache_hit">转录配置与文件未变，使用已保存的缓存，跳过识别…</string>
     <string name="section_transcription_cache">缓存</string>
-    <string name="desc_transcription_cache">相同视频与转录设置会复用已识别结果，加快下次导出。可在此清除缓存。</string>
+    <string name="desc_transcription_cache">同一个视频/音频文件，并且配置完全相同，会缓存识别结果以加快下次导出。</string>
+    <string name="markdown_format_help_content">Markdown 格式仅限文档识别与翻译。\nMD 和 TXT 类似，是一种更易于阅读的文本格式。</string>
     <string name="action_clear_transcription_cache">清除缓存</string>
     <string name="msg_extract_audio">正在从视频提取音频…</string>
     <string name="msg_processing_line">处理中：%1$s</string>
@@ -175,4 +178,6 @@
     <string name="err_unsupported_file_type">不支持的文件类型，目前只支持视频、音频、图片和常见文档。</string>
     <string name="msg_text_translating">正在翻译文本…</string>
     <string name="msg_text_translate_progress">翻译 %1$d/%2$d 段…</string>
+    <string name="drop_zone_hint_formats">MP4, MKV, MP3, AAC, PDF, DOC, MD, JPG...</string>
+    <string name="action_initiate_architect">INITIATE ARCHITECT</string>
 </resources>

@@ -62,9 +62,8 @@ fun smokeTestSourceText(tooling: ToolingSettings): String {
     }
 }
 
-suspend fun runServiceSmokeTest(tooling: ToolingSettings): SmokeTestResult {
+suspend fun runServiceSmokeTest(tooling: ToolingSettings, testText: String): SmokeTestResult {
     val target = tooling.targetLanguage
-    val testText = smokeTestSourceText(tooling)
     // 各引擎按目标语种选用中/英测试段，避免目标与源相同导致「假成功」
     return when (tooling.translationEngine) {
         TranslationEngine.APPLE -> {

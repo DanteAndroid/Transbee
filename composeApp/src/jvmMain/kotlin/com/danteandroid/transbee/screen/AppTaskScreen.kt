@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -58,6 +59,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import com.danteandroid.transbee.AppTheme
 import com.danteandroid.transbee.TransbeeTheme
 import com.danteandroid.transbee.process.PipelinePhase
@@ -88,6 +91,7 @@ import transbee.composeapp.generated.resources.status_free_space_prefix
 import transbee.composeapp.generated.resources.status_model_prefix
 import transbee.composeapp.generated.resources.tasks_completed
 import transbee.composeapp.generated.resources.tasks_processing
+import transbee.composeapp.generated.resources.drop_zone_hint_formats
 import java.io.File
 
 private val taskSortComparator =
@@ -161,34 +165,44 @@ fun AppTaskScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(spacing.medium)
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(32.dp)
                     ) {
-                        Text(
-                            stringResource(Res.string.app_title),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = 36.sp,
-                                letterSpacing = 1.sp
-                            ),
-                        )
-                        Spacer(Modifier.height(32.dp))
                         Icon(
                             Icons.Default.UploadFile,
                             contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(80.dp).padding(bottom = 16.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
                         Text(
                             stringResource(Res.string.drop_zone_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        OutlinedButton(onClick = {
-                            scope.launch {
-                                val files = withContext(Dispatchers.IO) { pickFilesWithChooser() }
-                                if (files.isNotEmpty()) handleFilesSelection(files)
-                            }
-                        }) {
-                            Text(stringResource(Res.string.action_choose_file))
+                        Text(
+                            stringResource(Res.string.drop_zone_hint_formats),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                        Spacer(Modifier.height(40.dp))
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    val files = withContext(Dispatchers.IO) { pickFilesWithChooser() }
+                                    if (files.isNotEmpty()) handleFilesSelection(files)
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                stringResource(Res.string.action_choose_file).uppercase(),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }
@@ -342,9 +356,13 @@ private fun TaskListHeader(
         TextButton(onClick = onChooseFiles) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(spacing.xSmall),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text("+", style = MaterialTheme.typography.labelMedium)
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
                 Text(
                     stringResource(Res.string.action_choose_file),
                     style = MaterialTheme.typography.labelMedium,
@@ -356,7 +374,7 @@ private fun TaskListHeader(
                 Icon(
                     Icons.Default.MoreVert,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                 )
             }
             DropdownMenu(
@@ -488,24 +506,32 @@ fun StatusBarRow(
             Spacer(Modifier.weight(1f))
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.xSmall),
+            horizontalArrangement = Arrangement.spacedBy(spacing.small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onTranslationTestClick) {
+            OutlinedButton(
+                onClick = onTranslationTestClick,
+                modifier = Modifier.height(38.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+            ) {
                 Text(
                     stringResource(Res.string.action_test),
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
-            TextButton(onClick = onSettingsClick) {
+            OutlinedButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.height(38.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(spacing.xSmall),
                 ) {
-                    Text("⚙", style = MaterialTheme.typography.labelMedium)
+                    Text("⚙", style = MaterialTheme.typography.labelLarge)
                     Text(
                         stringResource(Res.string.action_settings),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }

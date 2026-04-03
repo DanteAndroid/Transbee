@@ -160,148 +160,145 @@ object PipelineEngine {
         val client = MinerUClient(token)
         var workDir: java.nio.file.Path? = null
 
-        suspend fun <T> step(
-            progress: Float,
-            msgRes: org.jetbrains.compose.resources.StringResource,
-            indeterminate: Boolean = false,
-            block: suspend () -> T,
-        ): T? {
-            listener.onStateChange(
-                PipelinePhase.Transcribing,
-                JvmResourceStrings.text(msgRes),
-                progress,
-                indeterminate
-            )
-            return try {
-                block()
-            } catch (e: MinerUApiException) {
-                handleMinerUError(e, listener); null
-            } catch (e: Throwable) {
-                if (e is CancellationException) throw e
-                listener.onError(e.message ?: e.toString()); null
-            }
-        }
-
-        suspend fun <T> step(
-            progress: Float,
-            message: String,
-            indeterminate: Boolean = false,
-            block: suspend () -> T,
-        ): T? {
-            listener.onStateChange(PipelinePhase.Transcribing, message, progress, indeterminate)
-            return try {
-                block()
-            } catch (e: MinerUApiException) {
-                handleMinerUError(e, listener); null
-            } catch (e: Throwable) {
-                if (e is CancellationException) throw e
-                listener.onError(e.message ?: e.toString()); null
-            }
-        }
-
-        val uploadTotal = file.length().coerceAtLeast(0L)
-        val taskId = step(
-            0f,
-            JvmResourceStrings.text(
-                Res.string.msg_mineru_uploading,
-                0L.toReadableByteSize(),
-                uploadTotal.toReadableByteSize(),
-            ),
-            false,
-        ) {
-            client.submit(file) { sent, total ->
-                val totalSafe = total.coerceAtLeast(1L)
-                val frac = (sent.toDouble() / totalSafe.toDouble()).toFloat().coerceIn(0f, 1f)
-                listener.onProgress(
-                    JvmResourceStrings.text(
-                        Res.string.msg_mineru_uploading,
-                        sent.toReadableByteSize(),
-                        total.toReadableByteSize(),
-                    ),
-                    frac,
-                    false,
+        try {
+            suspend fun <T> step(
+                progress: Float,
+                msgRes: org.jetbrains.compose.resources.StringResource,
+                indeterminate: Boolean = false,
+                block: suspend () -> T,
+            ): T? {
+                listener.onStateChange(
+                    PipelinePhase.Transcribing,
+                    JvmResourceStrings.text(msgRes),
+                    progress,
+                    indeterminate
                 )
+                return try {
+                    block()
+                } catch (e: MinerUApiException) {
+                    handleMinerUError(e, listener); null
+                } catch (e: Throwable) {
+                    if (e is CancellationException) throw e
+                    listener.onError(e.message ?: e.toString()); null
+                }
             }
-        } ?: return
-        val zipUrl = step(
-            0f,
-            JvmResourceStrings.text(
-                Res.string.msg_mineru_processing,
-                mineruProcessingStatusLabel("")
-            ),
-            true,
-        ) {
-            client.poll(taskId) { state ->
-                listener.onProgress(
-                    JvmResourceStrings.text(
-                        Res.string.msg_mineru_processing,
-                        mineruProcessingStatusLabel(state)
-                    ),
-                    null,
-                    true,
-                )
-            }
-        } ?: return
 
-        val tmpDir =
-            withContext(Dispatchers.IO) { Files.createTempDirectory("transbee_pdf_") }.also {
-                workDir = it
+            suspend fun <T> step(
+                progress: Float,
+                message: String,
+                indeterminate: Boolean = false,
+                block: suspend () -> T,
+            ): T? {
+                listener.onStateChange(PipelinePhase.Transcribing, message, progress, indeterminate)
+                return try {
+                    block()
+                } catch (e: MinerUApiException) {
+                    handleMinerUError(e, listener); null
+                } catch (e: Throwable) {
+                    if (e is CancellationException) throw e
+                    listener.onError(e.message ?: e.toString()); null
+                }
             }
-        val zipFile = tmpDir.resolve("result.zip").toFile()
 
-        val downloadDone = step(
-            0f,
-            JvmResourceStrings.text(
-                Res.string.msg_mineru_downloading,
-                0L.toReadableByteSize(),
-                MinerUDownloadTotalUnknown,
-            ),
-            false,
-        ) {
-            HttpDownloader.downloadFile(
-                zipUrl,
-                zipFile,
-                timeout = Duration.ofMinutes(15),
-                onProgress = { received, total ->
-                    val totalStr = total?.toReadableByteSize() ?: MinerUDownloadTotalUnknown
-                    val frac =
-                        if (total != null && total > 0L) {
-                            (received.toDouble() / total.toDouble()).toFloat().coerceIn(0f, 1f)
-                        } else {
-                            0f
-                        }
+            val uploadTotal = file.length().coerceAtLeast(0L)
+            val taskId = step(
+                0f,
+                JvmResourceStrings.text(
+                    Res.string.msg_mineru_uploading,
+                    0L.toReadableByteSize(),
+                    uploadTotal.toReadableByteSize(),
+                ),
+                false,
+            ) {
+                client.submit(file) { sent, total ->
+                    val totalSafe = total.coerceAtLeast(1L)
+                    val frac = (sent.toDouble() / totalSafe.toDouble()).toFloat().coerceIn(0f, 1f)
                     listener.onProgress(
                         JvmResourceStrings.text(
-                            Res.string.msg_mineru_downloading,
-                            received.toReadableByteSize(),
-                            totalStr,
+                            Res.string.msg_mineru_uploading,
+                            sent.toReadableByteSize(),
+                            total.toReadableByteSize(),
                         ),
                         frac,
                         false,
                     )
-                },
+                }
+            } ?: return
+            val zipUrl = step(
+                0f,
+                JvmResourceStrings.text(
+                    Res.string.msg_mineru_processing,
+                    mineruProcessingStatusLabel("")
+                ),
+                true,
+            ) {
+                client.poll(taskId) { state ->
+                    listener.onProgress(
+                        JvmResourceStrings.text(
+                            Res.string.msg_mineru_processing,
+                            mineruProcessingStatusLabel(state)
+                        ),
+                        null,
+                        true,
+                    )
+                }
+            } ?: return
+
+            val tmpDir =
+                withContext(Dispatchers.IO) { Files.createTempDirectory("transbee_pdf_") }.also {
+                    workDir = it
+                }
+            val zipFile = tmpDir.resolve("result.zip").toFile()
+
+            val downloadDone = step(
+                0f,
+                JvmResourceStrings.text(
+                    Res.string.msg_mineru_downloading,
+                    0L.toReadableByteSize(),
+                    MinerUDownloadTotalUnknown,
+                ),
+                false,
+            ) {
+                HttpDownloader.downloadFile(
+                    zipUrl,
+                    zipFile,
+                    timeout = Duration.ofMinutes(15),
+                    onProgress = { received, total ->
+                        val totalStr = total?.toReadableByteSize() ?: MinerUDownloadTotalUnknown
+                        val frac =
+                            if (total != null && total > 0L) {
+                                (received.toDouble() / total.toDouble()).toFloat().coerceIn(0f, 1f)
+                            } else {
+                                0f
+                            }
+                        listener.onProgress(
+                            JvmResourceStrings.text(
+                                Res.string.msg_mineru_downloading,
+                                received.toReadableByteSize(),
+                                totalStr,
+                            ),
+                            frac,
+                            false,
+                        )
+                    },
+                )
+                Unit
+            } ?: return
+
+            listener.onStateChange(
+                PipelinePhase.Transcribing,
+                JvmResourceStrings.text(Res.string.msg_mineru_extracting),
+                0f,
+                true
             )
-            Unit
-        }
-        if (downloadDone == null) {
-            workDir?.toFile()?.deleteRecursively()
-            return
-        }
+            val destMdFile = File(file.parentFile, "${file.nameWithoutExtension}.md")
+            val extractedMd = try {
+                extractMdFromZip(zipFile, destMdFile)
+            } catch (e: Throwable) {
+                listener.onError(JvmResourceStrings.text(Res.string.err_mineru_zip))
+                return
+            }
 
-        listener.onStateChange(
-            PipelinePhase.Transcribing,
-            JvmResourceStrings.text(Res.string.msg_mineru_extracting),
-            0f,
-            true
-        )
-        val destMdFile = File(file.parentFile, "${file.nameWithoutExtension}.md")
-        val extractedMd = runCatching { extractMdFromZip(zipFile, destMdFile) }.getOrElse {
-            listener.onError(JvmResourceStrings.text(Res.string.err_mineru_zip))
-            workDir?.toFile()?.deleteRecursively()
-            return
-        }
-
-        try {
             val mdContent = extractedMd.readText()
             val paragraphs = MdTranslator.splitParagraphs(mdContent)
             val translatableTotal = MdTranslator.countTranslatableParagraphs(paragraphs)
@@ -324,10 +321,12 @@ object PipelineEngine {
             listener.onCompleted(destMdFile.absolutePath, null)
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
-            workDir?.toFile()?.deleteRecursively()
             listener.onError(e.message ?: e.toString())
+        } finally {
+            workDir?.toFile()?.deleteRecursively()
         }
     }
+
 
     /** txt/md 直接读取内容并翻译，不经 MinerU */
     private suspend fun executeTextTranslatePipeline(

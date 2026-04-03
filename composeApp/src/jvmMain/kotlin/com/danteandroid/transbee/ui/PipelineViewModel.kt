@@ -8,6 +8,7 @@ import com.danteandroid.transbee.process.PipelinePhase
 import com.danteandroid.transbee.process.isCancellableByStopAll
 import com.danteandroid.transbee.settings.ToolingSettings
 import com.danteandroid.transbee.settings.ToolingSettingsStore
+import com.danteandroid.transbee.settings.TaskRecordStore
 import com.danteandroid.transbee.settings.TranscriptionCacheStore
 import com.danteandroid.transbee.translate.AppleTranslateBinary
 import com.danteandroid.transbee.translate.TranslationEngine
@@ -65,7 +66,7 @@ class PipelineViewModel : ViewModel() {
     private val _tooling = MutableStateFlow(ToolingSettingsStore.loadOrDefault())
     val tooling: StateFlow<ToolingSettings> = _tooling.asStateFlow()
 
-    private val _tasks = MutableStateFlow<List<TaskRecord>>(emptyList())
+    private val _tasks = MutableStateFlow<List<TaskRecord>>(TaskRecordStore.loadTasks())
     val tasks: StateFlow<List<TaskRecord>> = _tasks.asStateFlow()
 
     private val _modelDownload = MutableStateFlow(ModelDownloadUiState())
@@ -241,6 +242,7 @@ class PipelineViewModel : ViewModel() {
         }
         fileQueue.addLast(id to videoFile)
         startNextIfIdle()
+        TaskRecordStore.saveTasks(_tasks.value)
         return id
     }
 
@@ -263,7 +265,7 @@ class PipelineViewModel : ViewModel() {
                 }
             }
             _tasks.update { list -> list.filterNot { it.sourcePath == src } }
-            enqueuePipeline(file)
+            enqueuePipeline(file).let { if (isTaskId(it)) null else it }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -295,6 +297,7 @@ class PipelineViewModel : ViewModel() {
             pipelineJob?.cancel()
         }
         _tasks.update { list -> list.filterNot { it.id == id } }
+        TaskRecordStore.saveTasks(_tasks.value)
     }
 
     fun startAllTasks(): String? {
@@ -350,12 +353,14 @@ class PipelineViewModel : ViewModel() {
             }
         }
         pipelineJob?.cancel()
+        TaskRecordStore.saveTasks(_tasks.value)
     }
 
     fun deleteAllTasks() {
         fileQueue.clear()
         pipelineJob?.cancel()
         _tasks.update { emptyList() }
+        TaskRecordStore.saveTasks(emptyList())
     }
 
     private fun startNextIfIdle() {
@@ -394,6 +399,7 @@ class PipelineViewModel : ViewModel() {
 
     private fun updateTask(id: String, transform: (TaskRecord) -> TaskRecord) {
         _tasks.update { list -> list.map { if (it.id == id) transform(it) else it } }
+        TaskRecordStore.saveTasks(_tasks.value)
     }
 
     /** 任务已为 Cancelled 时不再被管道进度覆盖（例如全部停止后子进程尚未退出） */
@@ -405,6 +411,7 @@ class PipelineViewModel : ViewModel() {
                 transform(task)
             }
         }
+        TaskRecordStore.saveTasks(_tasks.value)
     }
 
     private suspend fun runPipelineInternal(id: String, file: File) {
@@ -461,7 +468,8 @@ class PipelineViewModel : ViewModel() {
                         progressIndeterminate = false,
                         outputPath = outputPath ?: it.outputPath,
                         error = null,
-                        translationStats = translationStats
+                        translationStats = translationStats,
+                        completedAtMs = System.currentTimeMillis(),
                     )
                     if (id == lastAutoOpenTaskId && updated.outputPath != null) {
                         OsUtils.openFile(File(updated.outputPath))

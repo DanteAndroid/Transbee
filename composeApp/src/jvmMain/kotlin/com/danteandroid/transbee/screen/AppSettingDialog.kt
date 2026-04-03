@@ -21,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,8 +55,8 @@ import transbee.composeapp.generated.resources.dialog_apple_help_body
 import transbee.composeapp.generated.resources.dialog_apple_help_link
 import transbee.composeapp.generated.resources.dialog_apple_help_title
 import transbee.composeapp.generated.resources.dialog_apple_help_url
-import transbee.composeapp.generated.resources.dialog_custom_llm_help_body
-import transbee.composeapp.generated.resources.dialog_custom_llm_help_title
+import transbee.composeapp.generated.resources.dialog_custom_llm_body
+import transbee.composeapp.generated.resources.dialog_custom_llm_title
 import transbee.composeapp.generated.resources.dialog_deepl_help_body
 import transbee.composeapp.generated.resources.dialog_deepl_help_link
 import transbee.composeapp.generated.resources.dialog_deepl_help_title
@@ -217,8 +216,11 @@ fun AppSettingDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedButton(onClick = onClearTranscriptionCache) {
-                    Text(stringResource(Res.string.action_clear_transcription_cache))
+                TextButton(onClick = onClearTranscriptionCache) {
+                    Text(
+                        stringResource(Res.string.action_clear_transcription_cache),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         },
@@ -245,12 +247,13 @@ fun AppSettingDialog(
     if (showCustomLlmHelp) {
         AlertDialog(
             onDismissRequest = { showCustomLlmHelp = false },
-            title = { Text(stringResource(Res.string.dialog_custom_llm_help_title)) },
+            title = { Text(stringResource(Res.string.dialog_custom_llm_title)) },
             text = {
                 SelectionContainer {
                     Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                        val helpContent = stringResource(Res.string.dialog_custom_llm_body)
                         Text(
-                            stringResource(Res.string.dialog_custom_llm_help_body),
+                            helpContent,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

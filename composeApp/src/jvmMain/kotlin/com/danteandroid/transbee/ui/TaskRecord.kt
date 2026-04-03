@@ -1,7 +1,9 @@
 package com.danteandroid.transbee.ui
 
 import com.danteandroid.transbee.process.PipelinePhase
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class TaskRecord(
     val id: String,
     val fileName: String,
@@ -15,4 +17,5 @@ data class TaskRecord(
     /** 任务成功完成后：翻译耗时、条数、请求与重试（仅本次任务） */
     val translationStats: TranslationTaskStats? = null,
     val createdAtMs: Long = System.currentTimeMillis(),
+    val completedAtMs: Long = 0L,
 )

@@ -11,7 +11,7 @@
     <string name="lang_whisper_auto">Auto-detect</string>
     <string name="section_vad">Voice Activity Detection</string>
     <string name="label_vad_toggle">Enable VAD</string>
-    <string name="dialog_vad_desc">When enabled, segment boundaries follow natural pauses in speech more closely; each subtitle line may be longer.\n\nIf subtitle lines are too long, turn this off and try again.</string>
+    <string name="dialog_vad_desc">When enabled, sentence breaking will be closer to natural pauses, often improving accuracy, though individual subtitles may become longer.\n\nIf you find your subtitles are too long, disable this option and try again.</string>
     <string name="model_group_general">General</string>
     <string name="model_group_english_only">English-only</string>
     <string name="action_download">Download</string>
@@ -51,6 +51,7 @@
     <string name="confirm_delete_all">Delete all tasks?</string>
     <string name="action_open_folder">📂 Folder</string>
     <string name="action_open_video">📄 Open</string>
+    <string name="action_play">▶ Play</string>
     <string name="action_retry_recognize">Re-transcribe</string>
     <string name="phase_queued">Queued</string>
     <string name="phase_extracting">Extracting</string>
@@ -82,7 +83,7 @@
     <string name="label_mineru_token">MinerU Token</string>
     <string name="section_mineru">MinerU</string>
     <string name="dialog_mineru_help_title">MinerU Settings</string>
-    <string name="dialog_mineru_help_body">MinerU provides powerful PDF to Markdown conversion.\n\nLimits:\n• File size: ≤ 200MB\n• Page count: ≤ 600 pages\n• Batch support: ≤ 200 files\n\nYou need an API Token to use this feature.</string>
+    <string name="dialog_mineru_help_body">MinerU provides powerful PDF to Markdown conversion.\n\nUsage limits:\n• File size: ≤ 200MB\n• Page count: ≤ 600 pages\n• Batch support: ≤ 200 files\n\nYou need to obtain an API Token to use this feature.</string>
     <string name="err_mineru_upload">Failed to upload PDF: %1$s</string>
     <string name="err_mineru_task_failed">MinerU recognition task failed (ID: %1$s)</string>
     <string name="err_mineru_download">Failed to download result package: %1$s</string>
@@ -92,19 +93,11 @@
     <string name="err_mineru_token_expired">MinerU Token Expired: The API dashboard has been opened for you. Please update your Token.</string>
     <string name="dialog_mineru_help_link">Go to MinerU API Dashboard</string>
     <string name="dialog_mineru_help_url">https://mineru.net/apiManage/docs</string>
-    <string name="dialog_custom_llm_help_title">Custom LLM</string>
-    <string name="dialog_custom_llm_help_body">Supports OpenAI-compatible APIs and many domestic LLMs:\n\nDeepSeek:\nAPI base URL: https://api.deepseek.com/v1\nModel: deepseek-chat or deepseek-reasoner\n\nZhipu AI (ChatGLM):\nAPI base URL: https://open.bigmodel.cn/api/paas/v4/\nModel: glm-4\n\nTongyi Qwen (Aliyun):\nAPI base URL: https://dashscope.aliyuncs.com/compatible-mode/v1\nModel: qwen-plus or qwen-max</string>
-    <string name="msg_mineru_uploading">Uploading file to MinerU…… %1$s / %2$s</string>
-    <string name="msg_mineru_status_waiting">Waiting</string>
-    <string name="msg_mineru_processing">MinerU parsing · %1$s…</string>
-    <string name="msg_mineru_downloading">Downloading recognition results…… %1$s / %2$s</string>
-    <string name="msg_mineru_extracting">Extracting Markdown…</string>
-    <string name="tasks_processing">Processing</string>
-    <string name="tasks_completed">Completed</string>
-    <string name="msg_total_duration">Total duration: %1$s</string>
+    <string name="dialog_custom_llm_title">Custom LLM</string>
+    <string name="dialog_custom_llm_body">Supports OpenAI and most Chinese large models:\n\nDeepSeek:\nEndpoint: https://api.deepseek.com/v1\nModel: deepseek-chat or deepseek-reasoner\n\nZhipu AI (ChatGLM):\nEndpoint: https://open.bigmodel.cn/api/paas/v4/\nModel: glm-4\n\nTongyi Qianwen (Aliyun):\nEndpoint: https://dashscope.aliyuncs.com/compatible-mode/v1\nModel: qwen-plus or qwen-max</string>
     <string name="err_mineru_token_missing">Please enter MinerU Token in settings first.</string>
     <string name="msg_pdf_translating">Translating document…… %1$d / %2$d paragraphs…</string>
-    <string name="label_markdown_format">Markdown format</string>
+    <string name="label_markdown_format">MD format</string>
     <string name="pdf_format_bilingual">Bilingual (interleaved)</string>
     <string name="pdf_format_original_first">Original first, then translation</string>
     <string name="pdf_format_translation_first">Translation first, then original</string>
@@ -127,7 +120,8 @@
     <string name="warn_start_all_missing_files">%1$d tasks were skipped and marked failed because source files are missing.</string>
     <string name="msg_transcription_cache_hit">Same file and transcription settings as saved cache; skipping recognition…</string>
     <string name="section_transcription_cache">Cache</string>
-    <string name="desc_transcription_cache">The same video and transcription settings reuse prior results to speed up the next export. Clear the cache here.</string>
+    <string name="desc_transcription_cache">For the same video or audio file with identical settings, recognition results are cached to speed up the next export.</string>
+    <string name="markdown_format_help_content">Markdown format is for document recognition and translation only.\nMD is similar to TXT, a text format that is easier to read.</string>
     <string name="action_clear_transcription_cache">Clear cache</string>
     <string name="msg_extract_audio">Extracting audio from video…</string>
     <string name="msg_processing_line">Processing: %1$s</string>
@@ -148,7 +142,7 @@
     <string name="err_apple_binary">On-device translation component not found.</string>
     <string name="msg_translate_apple_progress">Translating %1$d/%2$d…</string>
     <string name="dialog_apple_help_title">About Apple Translate</string>
-    <string name="dialog_apple_help_body">Apple Translate uses the macOS on-device translation API — free, fast, and offline.\n\nNote: On-device quality may be lower than online LLMs, especially for proper nouns or long, complex sentences.\n\nBefore using it, make sure the languages you need are downloaded:\n\n1. Open System Settings → General → Translation &amp; Live Text (or search for translation languages)\n2. Click the download button next to the language you need</string>
+    <string name="dialog_apple_help_body">Apple Translate uses your Mac\'s native translation API, which is offline, free, and fast.\n\nNote: Translation quality may be lower than online models for technical terms or complex sentences.\n\nEnsure your target language is downloaded to your system:\n\n1. Go to \"System Settings\" → \"General\" → \"Translation &amp; Live Text\"\n2. Click the download button next to the available languages</string>
     <string name="dialog_apple_help_link">Apple Support: download translation languages</string>
     <string name="dialog_apple_help_url">https://support.apple.com/guide/mac-help/mchl09c6b945/mac</string>
     <string name="msg_translate_google_progress">Translating %1$d/%2$d…</string>
@@ -176,4 +170,6 @@
     <string name="err_unsupported_file_type">Unsupported file type. Only video, audio, images and common documents are supported.</string>
     <string name="msg_text_translating">Translating text…</string>
     <string name="msg_text_translate_progress">Translating %1$d/%2$d paragraphs…</string>
+    <string name="drop_zone_hint_formats">MP4, MKV, MP3, AAC, PDF, DOC, MD, JPG...</string>
+    <string name="action_initiate_architect">INITIATE ARCHITECT</string>
 </resources>

@@ -58,51 +58,55 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFEBC400),
-    onPrimary = Color(0xFF3B2F00),
-    primaryContainer = Color(0xFF544400),
+    primary = Color(0xFFFFCC00), // Yellow accent
+    onPrimary = Color(0xFF000000),
+    primaryContainer = Color(0xFF332900),
     onPrimaryContainer = Color(0xFFFFE171),
-    secondary = Color(0xFF5ED4FD),
-    onSecondary = Color(0xFF003544),
-    secondaryContainer = Color(0xFF004D62),
+    secondary = Color(0xFF4D6BFF), // Blue for buttons/gradients
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFF001F2B),
     onSecondaryContainer = Color(0xFFBDE9FF),
-    tertiary = Color(0xFF4DB6AC),
-    onTertiary = Color(0xFF003734),
-    background = Color(0xFF001F2B),
-    onBackground = Color(0xFFE1E2E8),
-    surface = Color(0xFF001F2B),
-    onSurface = Color(0xFFE1E2E8),
-    surfaceVariant = Color(0xFF40485B),
-    onSurfaceVariant = Color(0xFFC2C7D4),
-    outline = Color(0xFF8C919E),
-    outlineVariant = Color(0xFF1F2937),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
+    tertiary = Color(0xFF8B5CF6), // Purple for gradients
+    onTertiary = Color(0xFFFFFFFF),
+    background = Color(0xFF080C1E), // Deep navy background
+    onBackground = Color(0xFFE2E8F0),
+    surface = Color(0xFF0D132D), // Panel surface
+    onSurface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFF1E293B),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    surfaceContainerLowest = Color(0xFF060918),
+    surfaceContainerLow = Color(0xFF0A1024),
+    surfaceContainer = Color(0xFF111A33),
+    surfaceContainerHigh = Color(0xFF161F3D),
+    surfaceContainerHighest = Color(0xFF1B2648),
+    outline = Color(0xFF334155),
+    outlineVariant = Color(0xFF1E293B),
+    error = Color(0xFFFF5555),
+    onError = Color(0xFF000000),
 )
 
 private val WhisperTypography = Typography(
     headlineSmall = TextStyle(
         fontSize = 24.sp,
         lineHeight = 32.sp,
-        fontFamily = LogoFont,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.5.sp,
     ),
     titleLarge = TextStyle(
-        fontSize = 22.sp,
+        fontSize = 20.sp,
         lineHeight = 28.sp,
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp,
     ),
     titleMedium = TextStyle(
-        fontSize = 18.sp,
+        fontSize = 16.sp,
         lineHeight = 24.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.2.sp,
     ),
     titleSmall = TextStyle(
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.1.sp,
     ),
@@ -119,28 +123,28 @@ private val WhisperTypography = Typography(
         letterSpacing = 0.2.sp,
     ),
     bodySmall = TextStyle(
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
         fontWeight = FontWeight.Normal,
         letterSpacing = 0.2.sp,
     ),
     labelLarge = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.1.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.5.sp,
     ),
     labelMedium = TextStyle(
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.3.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
     ),
     labelSmall = TextStyle(
         fontSize = 11.sp,
         lineHeight = 16.sp,
         fontWeight = FontWeight.Medium,
-        letterSpacing = 0.3.sp,
+        letterSpacing = 0.5.sp,
     ),
 )
 

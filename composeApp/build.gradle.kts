@@ -122,6 +122,7 @@ val generateBuildConfig = tasks.register("generateBuildConfig") {
     }
 }
 
+
 tasks.named("compileKotlinJvm") {
     dependsOn(generateBundledNativeDistributionPath, generateBuildConfig)
 }

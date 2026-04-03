@@ -1,5 +1,8 @@
 package com.danteandroid.transbee.process
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class PipelinePhase {
     Idle,
     Queued,

@@ -1,5 +1,8 @@
 package com.danteandroid.transbee.ui
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TranslationTaskStats(
     /** 提取音频 + Whisper 识别（命中缓存时为 0） */
     val recognitionDurationMs: Long,

@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -48,6 +53,7 @@ import transbee.composeapp.generated.resources.Res
 import transbee.composeapp.generated.resources.action_delete
 import transbee.composeapp.generated.resources.action_open_folder
 import transbee.composeapp.generated.resources.action_open_video
+import transbee.composeapp.generated.resources.action_play
 import transbee.composeapp.generated.resources.action_retry_recognize
 import transbee.composeapp.generated.resources.duration_format_min_sec
 import transbee.composeapp.generated.resources.duration_format_sec_only
@@ -55,6 +61,9 @@ import transbee.composeapp.generated.resources.duration_zero
 import transbee.composeapp.generated.resources.task_done_detail_full
 import transbee.composeapp.generated.resources.task_done_detail_skipped
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun TaskRowCard(
@@ -84,25 +93,36 @@ fun TaskRowCard(
         ) {
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    "\uD83D\uDCC4 ${task.fileName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
+                Row(
+                    Modifier.weight(1f).padding(end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        imageVector = taskTitleIcon(task.fileName),
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                    )
+                    Text(
+                        task.fileName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 Text(
                     task.phase.label,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = chipFg,
                     maxLines = 1,
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .background(chipBg)
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
 
@@ -142,21 +162,29 @@ private fun ActionRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        if (task.phase == PipelinePhase.Done && task.outputPath != null) {
-            TextButton(onClick = {
-                OsUtils.revealInFileBrowser(File(task.outputPath))
-            }) {
-                Text(stringResource(Res.string.action_open_folder))
-            }
-        }
         val srcPath = task.sourcePath
         if (task.phase == PipelinePhase.Done && !srcPath.isNullOrBlank()) {
             val sourceFile = File(srcPath)
-            val openPath =
-                if (PipelineEngine.isDocumentSourceFile(sourceFile)) task.outputPath else srcPath
+            val isDocument = PipelineEngine.isDocumentSourceFile(sourceFile)
+
+            val folderPath = if (isDocument) task.outputPath else srcPath
+            if (!folderPath.isNullOrBlank()) {
+                TextButton(onClick = {
+                    OsUtils.revealInFileBrowser(File(folderPath))
+                }) {
+                    Text(stringResource(Res.string.action_open_folder))
+                }
+            }
+
+            val openPath = if (isDocument) task.outputPath else srcPath
             if (!openPath.isNullOrBlank()) {
+                val openLabel = if (isDocument) {
+                    Res.string.action_open_video
+                } else {
+                    Res.string.action_play
+                }
                 TextButton(onClick = { runCatching { OsUtils.openFile(File(openPath)) } }) {
-                    Text(stringResource(Res.string.action_open_video))
+                    Text(stringResource(openLabel))
                 }
             }
         }
@@ -211,18 +239,76 @@ private fun TaskDetailBlock(task: TaskRecord, running: Boolean) {
         append(text.substring(lastIndex))
     }
 
+    val topPad = if (running) 0.dp else 8.dp
+    val showCompletedAt =
+        task.phase == PipelinePhase.Done &&
+            task.translationStats == null &&
+            task.completedAtMs > 0L &&
+            task.error.isNullOrBlank()
+
     SelectionContainer {
-        Text(
-            text = annotatedStr,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            minLines = 1,
-            maxLines = if (running) 2 else 5,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().padding(top = if (running) 0.dp else 8.dp),
-        )
+        if (showCompletedAt) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = topPad),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = annotatedStr,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                    minLines = 1,
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                )
+                Text(
+                    text = formatTaskCompletedAt(task.completedAtMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color.copy(alpha = 0.72f),
+                    maxLines = 1,
+                )
+            }
+        } else {
+            Text(
+                text = annotatedStr,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+                minLines = 1,
+                maxLines = if (running) 2 else 5,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().padding(top = topPad),
+            )
+        }
     }
 }
+
+private val taskCompletedAtFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MM/dd HH:mm")
+
+private val taskVideoExtensions =
+    setOf("mp4", "mkv", "avi", "mov", "webm", "flv", "wmv")
+private val taskAudioExtensions =
+    setOf("mp3", "wav", "aac", "flac", "m4a", "ogg", "wma")
+private val taskDocumentExtensions =
+    setOf(
+        "pdf", "doc", "docx", "ppt", "pptx",
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp",
+        "txt", "md",
+    )
+
+private fun taskTitleIcon(fileName: String): ImageVector {
+    val ext = fileName.substringAfterLast('.', "").lowercase()
+    return when {
+        ext in taskVideoExtensions -> Icons.Filled.Movie
+        ext in taskAudioExtensions -> Icons.Filled.AudioFile
+        ext in taskDocumentExtensions -> Icons.Filled.Description
+        else -> Icons.AutoMirrored.Filled.InsertDriveFile
+    }
+}
+
+private fun formatTaskCompletedAt(ms: Long): String =
+    Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).format(taskCompletedAtFormatter)
 
 @Composable
 private fun translationStatsLine(stats: TranslationTaskStats): String {
