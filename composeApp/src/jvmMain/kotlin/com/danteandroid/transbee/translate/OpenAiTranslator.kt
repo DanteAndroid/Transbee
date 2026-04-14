@@ -175,7 +175,7 @@ open class OpenAiTranslator(
         val placeholders: Map<String, String>,
     )
 
-    /** 字幕模式：保护 URL、邮箱、路径、行内代码、数字+单位 */
+    /** 字幕模式：保护 URL、邮箱、路径、行内代码，以及少量技术型数字记号 */
     private fun protectForSubtitle(text: String): ProtectedText = protectCommon(text)
 
     /** 文档模式：保护 URL、邮箱、行内代码、LaTeX 公式、Markdown 链接 */
@@ -195,11 +195,10 @@ open class OpenAiTranslator(
             }
         }
 
-        // 通用：URL / Email / 行内代码 / 数字+单位
+        // 通用：URL / Email / 行内代码
         protectRegex(Regex("""https?://[^\s]+""", RegexOption.IGNORE_CASE))
         protectRegex(Regex("""\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"""))
         protectRegex(Regex("""`[^`]+`"""))
-        protectRegex(Regex("""\b\d[\d,._]*\s?(?:%|ms|s|sec|min|h|hz|khz|mhz|ghz|kb|mb|gb|tb|fps|dpi|\u2103|\u00B0c|\u00B0f)?\b""", RegexOption.IGNORE_CASE))
 
         if (docMode) {
             // Markdown 链接 [text](url)
@@ -208,6 +207,16 @@ open class OpenAiTranslator(
             protectRegex(Regex("""\$\$[^$]+\$\$"""))
             protectRegex(Regex("""\$[^$]+\$"""))
         } else {
+            // 字幕里仅保护明显的技术型数字，避免把普通口语数字也冻结住
+            protectRegex(
+                Regex(
+                    """(?ix)
+                    \b(?:v(?:er(?:sion)?)?\.?\s*)?\d+(?:[._]\d+){1,3}\b |
+                    \b\d{3,4}p\b |
+                    \b\d+(?:\.\d+)?\s?(?:%|ms|s|sec|min|h|hz|khz|mhz|ghz|kb|mb|gb|tb|fps|dpi|\u2103|\u00B0c|\u00B0f)\b
+                    """.trimIndent(),
+                ),
+            )
             // 字幕专属：文件路径
             protectRegex(Regex("""(?:(?:[A-Za-z]:\\|/)[^\s]+)"""))
         }
