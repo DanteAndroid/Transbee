@@ -121,7 +121,8 @@ p {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  align-items: center;
+  gap: 16px;
   margin-top: 28px;
 }
 
@@ -157,6 +158,11 @@ p {
   margin-top: 14px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.meta-inline {
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 .screenshot-card,
@@ -287,5 +293,10 @@ p {
 
   .hero-actions {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .meta-inline {
+    white-space: normal;
   }
 }
