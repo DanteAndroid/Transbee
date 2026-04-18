@@ -30,7 +30,7 @@
           <a
             id="download-button"
             class="button button-primary"
-            href="https://github.com/DanteAndroid/Transbee/releases/download/v1.1.1/Transbee.dmg"
+            href="https://github.com/DanteAndroid/Transbee/releases/download/v1.1.1/Transbee-1.1.1.dmg"
             data-i18n="downloadGeneric"
           >
             下载 Transbee
@@ -199,12 +199,12 @@
         }
 
         if (isMac) {
-          button.href = base + "Transbee.dmg";
+          button.href = base + "Transbee-" + version + ".dmg";
           button.textContent = copy[nextLocale].downloadMac;
           return;
         }
 
-        button.href = base + "Transbee.dmg";
+        button.href = base + "Transbee-" + version + ".dmg";
         button.textContent = copy[nextLocale].downloadGeneric;
       }
 
