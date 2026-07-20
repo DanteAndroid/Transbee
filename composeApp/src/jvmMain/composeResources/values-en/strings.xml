@@ -141,8 +141,6 @@
     <string name="err_openai_too_many_unchanged">Too many lines appear untranslated (%1$d/%2$d). Rejected to trigger retry.</string>
     <string name="err_openai_merged_long">Detected suspicious merged long translation. Rejected to trigger retry.</string>
     <string name="err_llm_count_mismatch">Model item count mismatch (requested %1$d, got %2$d)</string>
-    <string name="err_key_properties_missing">key.properties not found. Copy composeApp/src/jvmMain/resources/key.properties.example to key.properties and fill in appId/appSecret.</string>
-    <string name="err_key_properties_required">key.properties missing or empty: %1$s</string>
     <string name="err_feishu_vip_col_missing">VIP column not found</string>
     <string name="err_feishu_key_col_missing">Key column not found</string>
     <string name="err_feishu_table_missing">Table “%1$s” not found. Check table name and app_token.</string>

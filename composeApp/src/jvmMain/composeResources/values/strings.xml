@@ -147,8 +147,6 @@
     <string name="err_openai_too_many_unchanged">检测到较多疑似未翻译条目（%1$d/%2$d），已拒绝结果并触发重试。</string>
     <string name="err_openai_merged_long">检测到疑似合并后的超长译文，已拒绝结果并触发重试。</string>
     <string name="err_llm_count_mismatch">模型返回条数不一致（请求 %1$d 条，返回 %2$d 条）</string>
-    <string name="err_key_properties_missing">未找到 key.properties。请将 composeApp/src/jvmMain/resources/key.properties.example 复制为 key.properties 并填写 appId、appSecret。</string>
-    <string name="err_key_properties_required">key.properties 缺少或为空: %1$s</string>
     <string name="err_feishu_vip_col_missing">未找到 VIP 列</string>
     <string name="err_feishu_key_col_missing">未找到 Key 列</string>
     <string name="err_feishu_table_missing">未找到名为「%1$s」的数据表，请确认表名与 app_token</string>

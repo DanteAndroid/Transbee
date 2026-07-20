@@ -24,10 +24,7 @@ import transbee.composeapp.generated.resources.err_feishu_key_empty
 import transbee.composeapp.generated.resources.err_feishu_table_missing
 import transbee.composeapp.generated.resources.err_feishu_vip_col_missing
 import transbee.composeapp.generated.resources.err_feishu_search_vip_failed
-import transbee.composeapp.generated.resources.err_key_properties_missing
-import transbee.composeapp.generated.resources.err_key_properties_required
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -35,7 +32,6 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import java.time.Duration
-import java.util.Properties
 
 /**
  * 飞书多维表格（Bitable）预置 Key 分发：串行获取 token → 解析表 ID → 查询待领取记录 → 标记已领取。
@@ -43,40 +39,8 @@ import java.util.Properties
  */
 object FeishuKeyManager {
 
-    private val props by lazy { loadKeyProperties() }
-
-    private val appId: String by lazy { req("appId") }
-    private val appSecret: String by lazy { req("appSecret") }
-
-    private fun loadKeyProperties(): Properties {
-        val fromClasspath = openKeyPropertiesStream()?.use { stream ->
-            Properties().apply { load(InputStreamReader(stream, StandardCharsets.UTF_8)) }
-        }
-        if (fromClasspath != null) return fromClasspath
-
-        val fromEnv = Properties().apply {
-            System.getenv("FEISHU_APP_ID")?.trim()?.takeIf { it.isNotEmpty() }?.let { setProperty("appId", it) }
-            System.getenv("FEISHU_APP_SECRET")?.trim()?.takeIf { it.isNotEmpty() }?.let { setProperty("appSecret", it) }
-        }
-        if (!fromEnv.getProperty("appId").isNullOrBlank() && !fromEnv.getProperty("appSecret").isNullOrBlank()) {
-            return fromEnv
-        }
-
-        error(JvmResourceStrings.text(Res.string.err_key_properties_missing))
-    }
-
-    private fun openKeyPropertiesStream(): java.io.InputStream? {
-        val clazz = FeishuKeyManager::class.java
-        return clazz.getResourceAsStream("/key.properties")
-            ?: clazz.classLoader?.getResourceAsStream("key.properties")
-            ?: Thread.currentThread().contextClassLoader?.getResourceAsStream("key.properties")
-    }
-
-    private fun req(key: String): String {
-        val v = props.getProperty(key)?.trim()
-        if (v.isNullOrEmpty()) error(JvmResourceStrings.text(Res.string.err_key_properties_required, key))
-        return v
-    }
+    private const val APP_ID = "cli_a945dad52f7a1bd7"
+    private const val APP_SECRET = "1wvDUm5vHCQbARMV5IN6Hh10Ep2SKzKQ"
 
     /** 多维表格 app_token（一般为「分享」链接中 `base/` 后的一段；若 wiki 链接不可用请替换为 base 链接中的 token） */
     private const val BITABLE_APP_TOKEN = "VQ5RwAqgnimIADk25tPcMzVHnvc"
@@ -184,7 +148,7 @@ object FeishuKeyManager {
             return cached
         }
         val body = json.encodeToString(
-            InternalTokenRequest(app_id = appId, app_secret = appSecret),
+            InternalTokenRequest(app_id = APP_ID, app_secret = APP_SECRET),
         )
         val request = HttpRequest.newBuilder()
             .uri(URI.create("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"))
