@@ -1,5 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import transbee.tasks.GenerateBundledNativeDistributionPathTask
+import transbee.tasks.PrepareFeishuKeyPropertiesTask
+import transbee.tasks.ValidateFeishuReleaseCredentialsTask
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -59,6 +61,39 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
+val jvmMainResourcesSourceDir = layout.projectDirectory.dir("src/jvmMain/resources")
+val generatedJvmMainResourcesDir = layout.buildDirectory.dir("generated/transbee/resources/jvmMain")
+val generatedFeishuKeyProperties =
+    generatedJvmMainResourcesDir.map { it.file("key.properties") }
+val distributionPackagingTaskNames = setOf(
+    "createDistributable",
+    "package",
+    "packageDeb",
+    "packageDistributionForCurrentOS",
+    "packageDmg",
+    "packageMsi",
+    "packageUberJarForCurrentOS",
+)
+val distributionPackagingRequested = gradle.startParameter.taskNames.any {
+    it.substringAfterLast(':') in distributionPackagingTaskNames
+}
+
+val prepareFeishuKeyProperties =
+    tasks.register<PrepareFeishuKeyPropertiesTask>("prepareFeishuKeyProperties") {
+        group = "build"
+        description = "准备 JVM 资源中的飞书凭据"
+        sourceDirectory.set(jvmMainResourcesSourceDir)
+        outputDirectory.set(generatedJvmMainResourcesDir)
+    }
+
+val validateFeishuReleaseCredentials =
+    tasks.register<ValidateFeishuReleaseCredentialsTask>("validateFeishuReleaseCredentials") {
+        group = "verification"
+        description = "验证发布包内的飞书凭据"
+        dependsOn(prepareFeishuKeyProperties)
+        keyPropertiesFile.set(generatedFeishuKeyProperties)
+    }
+
 kotlin {
     jvm {
         compilerOptions {
@@ -81,6 +116,7 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         jvmMain {
+            resources.setSrcDirs(listOf(generatedJvmMainResourcesDir))
             kotlin.srcDir(layout.buildDirectory.dir("generated/transbee/kotlin"))
             dependencies {
                 implementation(compose.desktop.currentOs)
@@ -164,6 +200,22 @@ val generateBuildConfig = tasks.register("generateBuildConfig") {
 
 tasks.named("compileKotlinJvm") {
     dependsOn(generateBundledNativeDistributionPath, generateBuildConfig)
+}
+
+listOf(
+    "assembleJvmMainResources",
+    "jvmProcessResources",
+    "processJvmMainResources",
+).forEach { taskName ->
+    tasks.named(taskName) {
+        dependsOn(
+            if (distributionPackagingRequested) {
+                validateFeishuReleaseCredentials
+            } else {
+                prepareFeishuKeyProperties
+            },
+        )
+    }
 }
 
 val buildAppleTranslateMac = tasks.register<Exec>("buildAppleTranslateMac") {
@@ -399,6 +451,20 @@ val syncBundledWhisperCli = tasks.register("syncBundledWhisperCli") {
     }
 }
 
+if (distributionPackagingRequested) {
+    listOf(
+        buildAppleTranslateMac,
+        syncAppleTranslateBundle,
+        syncBundledFfmpeg,
+        buildBundledWhisperCliUnix,
+        syncBundledWhisperCli,
+    ).forEach { task ->
+        task.configure {
+            dependsOn(validateFeishuReleaseCredentials)
+        }
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "com.danteandroid.transbee.MainKt"
@@ -481,6 +547,20 @@ afterEvaluate {
             if (t is JavaExec) {
                 t.configureComposeRunResources()
             }
+        }
+    }
+
+    distributionPackagingTaskNames.forEach { taskName ->
+        tasks.findByName(taskName)?.dependsOn(validateFeishuReleaseCredentials)
+    }
+    if (distributionPackagingRequested) {
+        listOf(
+            "checkRuntime",
+            "createRuntimeImage",
+            "prepareAppResources",
+            "unpackDefaultComposeDesktopJvmApplicationResources",
+        ).forEach { taskName ->
+            tasks.findByName(taskName)?.dependsOn(validateFeishuReleaseCredentials)
         }
     }
 
