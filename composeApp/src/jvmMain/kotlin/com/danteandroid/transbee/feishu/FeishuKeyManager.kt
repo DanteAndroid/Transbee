@@ -49,14 +49,27 @@ object FeishuKeyManager {
     private val appSecret: String by lazy { req("appSecret") }
 
     private fun loadKeyProperties(): Properties {
-        val stream =
-            FeishuKeyManager::class.java.classLoader?.getResourceAsStream("key.properties")
-                ?: error(
-                    JvmResourceStrings.text(Res.string.err_key_properties_missing),
-                )
-        return stream.use {
-            Properties().apply { load(InputStreamReader(it, StandardCharsets.UTF_8)) }
+        val fromClasspath = openKeyPropertiesStream()?.use { stream ->
+            Properties().apply { load(InputStreamReader(stream, StandardCharsets.UTF_8)) }
         }
+        if (fromClasspath != null) return fromClasspath
+
+        val fromEnv = Properties().apply {
+            System.getenv("FEISHU_APP_ID")?.trim()?.takeIf { it.isNotEmpty() }?.let { setProperty("appId", it) }
+            System.getenv("FEISHU_APP_SECRET")?.trim()?.takeIf { it.isNotEmpty() }?.let { setProperty("appSecret", it) }
+        }
+        if (!fromEnv.getProperty("appId").isNullOrBlank() && !fromEnv.getProperty("appSecret").isNullOrBlank()) {
+            return fromEnv
+        }
+
+        error(JvmResourceStrings.text(Res.string.err_key_properties_missing))
+    }
+
+    private fun openKeyPropertiesStream(): java.io.InputStream? {
+        val clazz = FeishuKeyManager::class.java
+        return clazz.getResourceAsStream("/key.properties")
+            ?: clazz.classLoader?.getResourceAsStream("key.properties")
+            ?: Thread.currentThread().contextClassLoader?.getResourceAsStream("key.properties")
     }
 
     private fun req(key: String): String {
